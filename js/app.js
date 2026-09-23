@@ -1707,7 +1707,10 @@ M30
         speedLabel.textContent = val.toFixed(1) + 'x';
     });
 
-    if (toggleGrid) toggleGrid.addEventListener('change', (e) => visualizer.setOptions({ showGrid: e.target.checked }));
+    if (toggleGrid) toggleGrid.addEventListener('change', (e) => {
+        visualizer.setOptions({ showGrid: e.target.checked });
+        if (cadViewer) cadViewer.setGridVisible(e.target.checked);
+    });
     if (toggleStock) toggleStock.addEventListener('change', (e) => visualizer.setOptions({ showStock: e.target.checked }));
     if (toggleVice) toggleVice.addEventListener('change', (e) => visualizer.setOptions({ showVice: e.target.checked }));
     if (toggleKerf) toggleKerf.addEventListener('change', (e) => visualizer.setOptions({ showKerf: e.target.checked }));

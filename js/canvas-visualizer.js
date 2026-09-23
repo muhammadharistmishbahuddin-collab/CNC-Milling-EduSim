@@ -33,9 +33,9 @@ class MillingVisualizer {
         this.dragStartX = 0;
         this.dragStartY = 0;
 
-        // 3D Orbital Camera Parameters
-        this.defaultRotZ = Math.PI / 4; // 45°
-        this.defaultRotX = 35.264 * (Math.PI / 180); // ~0.61548 rad (~35.26° true isometric)
+        // 3D Orbital Camera Parameters (Standar Pandangan Depan-Kanan / Front-Right CAD)
+        this.defaultRotZ = 30 * (Math.PI / 180); // ~0.5236 rad (30° azimuth dari depan-kanan)
+        this.defaultRotX = 35.264 * (Math.PI / 180); // ~0.61548 rad (~35.26° true isometric pitch)
         this.rotZ = this.defaultRotZ;
         this.rotX = this.defaultRotX;
         this.isRightDragging = false;
@@ -272,20 +272,17 @@ class MillingVisualizer {
         const dy = y - bounds.centerY;
         const dz = z;
 
-        // 1. Azimuth yaw rotation around vertical Z axis
         const cosZ = Math.cos(this.rotZ);
         const sinZ = Math.sin(this.rotZ);
-        const x1 = dx * cosZ - dy * sinZ;
-        const y1 = dx * sinZ + dy * cosZ;
-        const z1 = dz;
-
-        // 2. Pitch / elevation tilt rotation
         const cosX = Math.cos(this.rotX);
         const sinX = Math.sin(this.rotX);
-        
-        // 3. Screen coordinates (1.22474 ≈ sqrt(3/2) normalizes isometric scale)
-        const isoX = x1 * 1.22474;
-        const isoY = (y1 * sinX - z1 * cosX) * 1.22474;
+
+        // Standar Proyeksi Isometrik CAD (Sudut Pandang Depan-Kanan / Front-Right View):
+        // Sumbu X bergerak ke kanan (+dx * cosZ), Sumbu Y menjauh ke dalam layar (+dy * sinZ)
+        const isoX = (dx * cosZ + dy * sinZ) * 1.18;
+
+        // Elevasi dan kedalaman: Kedalaman (dy) dan elevasi (dz) mengarah ke atas layar (titik 0,0,0 di depan-kiri)
+        const isoY = (dx * sinX * sinZ - dy * sinX * cosZ - dz * cosX) * 1.18;
 
         return {
             x: this.offsetX + isoX * this.scale,
@@ -517,7 +514,6 @@ class MillingVisualizer {
         if (!this.options.showGrid) return;
 
         ctx.save();
-        ctx.lineWidth = 1;
 
         let step = 20; // 20mm standard grid tick matching reference design
         if (this.scale > 10) step = 10;
@@ -531,35 +527,58 @@ class MillingVisualizer {
         const startY = Math.floor(leftWorld.y / step) * step - step;
         const endY = Math.ceil(rightWorld.y / step) * step + step;
 
-        ctx.font = 'bold 9.5px Fira Code, monospace';
-        ctx.fillStyle = '#64748B';
+        ctx.font = 'bold 10px Fira Code, monospace';
 
-        // Vertical lines (constant X)
+        // Vertical lines (constant X, X=0 is Y-Axis -> GREEN)
         for (let x = startX; x <= endX; x += step) {
             const p = this.worldToScreen2D(x, 0);
+            const isZero = (x === 0);
+            const isMajor = (x % 100 === 0);
+
             ctx.beginPath();
-            ctx.strokeStyle = (x === 0) ? 'rgba(239, 68, 68, 0.45)' : 'rgba(30, 58, 95, 0.4)';
-            ctx.lineWidth = (x === 0) ? 1.5 : 0.8;
+            if (isZero) {
+                ctx.strokeStyle = 'rgba(16, 185, 129, 0.95)'; // Garis Sumbu Y (X=0) Hijau Tegas
+                ctx.lineWidth = 2.4;
+            } else if (isMajor) {
+                ctx.strokeStyle = 'rgba(96, 165, 250, 0.65)'; // Grid kelipatan 100mm lebih tebal & terang
+                ctx.lineWidth = 1.8;
+            } else {
+                ctx.strokeStyle = 'rgba(56, 120, 195, 0.50)'; // Grid standar lebih tebal & kontras
+                ctx.lineWidth = 1.4;
+            }
             ctx.moveTo(p.x, 0);
             ctx.lineTo(p.x, this.height);
             ctx.stroke();
 
             if (p.x > 35 && p.x < this.width - 45) {
+                ctx.fillStyle = isZero ? '#34D399' : (isMajor ? '#BAE6FD' : '#94A3B8');
                 ctx.fillText('X' + x, p.x - 12, this.height - 8);
             }
         }
 
-        // Horizontal lines (constant Y)
+        // Horizontal lines (constant Y, Y=0 is X-Axis -> RED)
         for (let y = startY; y <= endY; y += step) {
             const p = this.worldToScreen2D(0, y);
+            const isZero = (y === 0);
+            const isMajor = (y % 100 === 0);
+
             ctx.beginPath();
-            ctx.strokeStyle = (y === 0) ? 'rgba(16, 185, 129, 0.45)' : 'rgba(30, 58, 95, 0.4)';
-            ctx.lineWidth = (y === 0) ? 1.5 : 0.8;
+            if (isZero) {
+                ctx.strokeStyle = 'rgba(239, 68, 68, 0.95)'; // Garis Sumbu X (Y=0) Merah Tegas
+                ctx.lineWidth = 2.4;
+            } else if (isMajor) {
+                ctx.strokeStyle = 'rgba(96, 165, 250, 0.65)'; // Grid kelipatan 100mm lebih tebal & terang
+                ctx.lineWidth = 1.8;
+            } else {
+                ctx.strokeStyle = 'rgba(56, 120, 195, 0.50)'; // Grid standar lebih tebal & kontras
+                ctx.lineWidth = 1.4;
+            }
             ctx.moveTo(0, p.y);
             ctx.lineTo(this.width, p.y);
             ctx.stroke();
 
             if (p.y > 18 && p.y < this.height - 25) {
+                ctx.fillStyle = isZero ? '#F87171' : (isMajor ? '#BAE6FD' : '#94A3B8');
                 ctx.fillText('Y' + y, 8, p.y + 3.5);
             }
         }
@@ -962,14 +981,15 @@ class MillingVisualizer {
         ctx.restore();
     }
 
-    // ==========================================
-    // 3D ISOMETRIC VIEW RENDERING & SOLID CAD ENGINE
-    // ==========================================
     renderIsometricView(ctx) {
         if (this.options.showFinishedOnly) {
             this.drawSolidCADModel3D(ctx);
             this.drawOriginMarker3DIso(ctx);
             return;
+        }
+
+        if (this.options.showGrid) {
+            this.drawGrid3DIso(ctx);
         }
 
         this.drawStock3DIso(ctx);
@@ -979,6 +999,67 @@ class MillingVisualizer {
         this.drawPlannedToolpaths3DIso(ctx);
         this.drawExecutedToolpaths3DIso(ctx);
         this.drawOriginMarker3DIso(ctx);
+    }
+
+    drawGrid3DIso(ctx) {
+        ctx.save();
+        const bounds = this.getStockBounds();
+        const sZ = this.options.stockZ || 25;
+        const zBase = -sZ;
+        const step = 20;
+
+        const gridMinX = bounds.centerX - 160;
+        const gridMaxX = bounds.centerX + 160;
+        const gridMinY = bounds.centerY - 160;
+        const gridMaxY = bounds.centerY + 160;
+
+        // Lines along X (varying X, constant Y, Y=0 is X-Axis -> RED)
+        for (let y = gridMinY; y <= gridMaxY; y += step) {
+            const p1 = this.worldToScreenIso(gridMinX, y, zBase);
+            const p2 = this.worldToScreenIso(gridMaxX, y, zBase);
+            const isZero = (Math.abs(y) < 0.1);
+            const isMajor = (Math.abs(y % 100) < 0.1);
+
+            ctx.beginPath();
+            if (isZero) {
+                ctx.strokeStyle = 'rgba(239, 68, 68, 0.95)'; // Garis Sumbu X (Y=0) Merah Tegas
+                ctx.lineWidth = 2.4;
+            } else if (isMajor) {
+                ctx.strokeStyle = 'rgba(96, 165, 250, 0.65)';
+                ctx.lineWidth = 1.8;
+            } else {
+                ctx.strokeStyle = 'rgba(56, 120, 195, 0.50)';
+                ctx.lineWidth = 1.4;
+            }
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+        }
+
+        // Lines along Y (varying Y, constant X, X=0 is Y-Axis -> GREEN)
+        for (let x = gridMinX; x <= gridMaxX; x += step) {
+            const p1 = this.worldToScreenIso(x, gridMinY, zBase);
+            const p2 = this.worldToScreenIso(x, gridMaxY, zBase);
+            const isZero = (Math.abs(x) < 0.1);
+            const isMajor = (Math.abs(x % 100) < 0.1);
+
+            ctx.beginPath();
+            if (isZero) {
+                ctx.strokeStyle = 'rgba(16, 185, 129, 0.95)'; // Garis Sumbu Y (X=0) Hijau Tegas
+                ctx.lineWidth = 2.4;
+            } else if (isMajor) {
+                ctx.strokeStyle = 'rgba(96, 165, 250, 0.65)';
+                ctx.lineWidth = 1.8;
+            } else {
+                ctx.strokeStyle = 'rgba(56, 120, 195, 0.50)';
+                ctx.lineWidth = 1.4;
+            }
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.stroke();
+        }
+
+        ctx.restore();
     }
 
     // ==========================================
@@ -2001,18 +2082,15 @@ class MillingVisualizer {
         ctx.font = 'bold 11px Inter, sans-serif';
 
         if (this.options.viewMode === 'iso') {
-            // Project 3D vector using the exact same rotZ and rotX
+            // Project 3D vector using the exact same camera parameters
             const projectAxis = (vx, vy, vz) => {
                 const cosZ = Math.cos(this.rotZ);
                 const sinZ = Math.sin(this.rotZ);
-                const x1 = vx * cosZ - vy * sinZ;
-                const y1 = vx * sinZ + vy * cosZ;
-                const z1 = vz;
-
                 const cosX = Math.cos(this.rotX);
                 const sinX = Math.sin(this.rotX);
-                const isoX = x1 * 1.22474;
-                const isoY = (y1 * sinX - z1 * cosX) * 1.22474;
+
+                const isoX = (vx * cosZ + vy * sinZ) * 1.18;
+                const isoY = (vx * sinX * sinZ - vy * sinX * cosZ - vz * cosX) * 1.18;
 
                 return {
                     x: originX + isoX * len,

@@ -488,11 +488,19 @@ class MillingCAD3DViewer {
         this.groundMesh.receiveShadow = true;
         this.scene.add(this.groundMesh);
 
-        // Subtle Engineering Grid
-        this.grid = new THREE.GridHelper(300, 30, 0x334155, 0x1e293b);
+        // Clear High-Contrast Engineering Grid
+        this.grid = new THREE.GridHelper(300, 30, 0x38bdf8, 0x2563eb);
         this.grid.rotation.x = Math.PI / 2; // Lie on XY plane
         this.grid.position.set(b.centerX, b.centerY, -sZ - 0.2);
+        if (this.grid.material) {
+            this.grid.material.opacity = 0.70;
+            this.grid.material.transparent = true;
+        }
         this.scene.add(this.grid);
+    }
+
+    setGridVisible(visible) {
+        if (this.grid) this.grid.visible = !!visible;
     }
 
     setupAxes() {

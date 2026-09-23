@@ -13,12 +13,12 @@
 </head>
 <body class="bg-[#EDF5FD] text-[#0F172A] flex flex-col h-screen overflow-hidden">
 
-    <!-- TOP NAVIGATION BAR (Rounded Card Style) -->
-    <header class="bg-white border border-[#DCE7F5] rounded-2xl mx-3.5 mt-3 px-5 py-2.5 flex items-center justify-between flex-shrink-0 z-20 shadow-sm">
-        <div class="flex items-center gap-3.5">
-            <!-- 3D Milling Machine Isometric Graphic Icon -->
-            <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-100 via-sky-50 to-indigo-100 border border-blue-200 flex items-center justify-center shadow-xs text-blue-700 flex-shrink-0 overflow-hidden">
-                <svg class="w-8 h-8" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- TOP NAVIGATION BAR (Full-Width Edge-to-Edge Studio - Opsi 2) -->
+    <header class="bg-white border-b border-[#DCE7F5] px-6 lg:px-8 py-3.5 flex items-center justify-between flex-shrink-0 z-20 shadow-2xs">
+        <div class="flex items-center gap-4">
+            <!-- 3D Milling Machine Isometric Graphic Icon (56px) -->
+            <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-50 via-sky-50 to-indigo-100 border border-blue-200 flex items-center justify-center shadow-xs text-blue-700 flex-shrink-0 ring-4 ring-blue-50/70">
+                <svg class="w-10 h-10" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <!-- Base Machine Bed (Isometric) -->
                     <path d="M32 46L8 34L32 22L56 34L32 46Z" fill="#CBD5E1" stroke="#475569" stroke-width="1.8" stroke-linejoin="round"/>
                     <path d="M8 34L8 42L32 54L32 46L8 34Z" fill="#94A3B8" stroke="#475569" stroke-width="1.8" stroke-linejoin="round"/>
@@ -34,36 +34,53 @@
                     <path d="M31 30L33 30L32.5 35L31.5 35Z" fill="#F59E0B" stroke="#D97706" stroke-width="0.8"/>
                 </svg>
             </div>
-            <div>
-                <div class="flex items-center gap-2.5">
-                    <h1 class="font-extrabold text-lg tracking-tight text-[#0F172A] flex items-center gap-1.5">
-                        CNC Milling <span class="text-[#0D5BC6]">EduSim</span>
-                    </h1>
-                    <span class="bg-[#FEF3C7] border border-[#FDE68A] text-[#92400E] font-bold text-[11px] px-3 py-0.5 rounded-full flex items-center gap-1.5 shadow-xs">
-                        <i data-lucide="graduation-cap" class="w-3.5 h-3.5 text-amber-600"></i>
-                        PPG Calon Guru 2025
-                    </span>
+
+            <!-- Typography: Judul & Subtitle Bersebelahan Sejajar Tinggi Gambar dengan Jarak Lega -->
+            <div class="h-14 flex items-center gap-6">
+                <!-- Judul Utama Diperbesar -->
+                <h1 class="font-black text-[28px] lg:text-[32px] tracking-tight text-[#0F172A] leading-none whitespace-nowrap flex items-center">
+                    CNC Milling <span class="text-[#0D5BC6] ml-2">EduSim</span>
+                </h1>
+
+                <!-- Sekat Garis Lurus Vertikal Proporsional -->
+                <div class="h-10 w-[1.5px] bg-[#CFE0F5] self-center"></div>
+
+                <!-- Tulisan Penjelas 2 Baris (Sejajar Kanan-Kiri Presisi) -->
+                <div class="flex flex-col justify-center gap-1">
+                    <span class="text-[13px] lg:text-[14px] font-bold text-[#1E293B] leading-tight whitespace-nowrap">Simulator Interaktif &amp; Media Pembelajaran</span>
+                    <div class="w-full flex justify-between text-[11.5px] lg:text-[12.5px] text-[#64748B] font-medium leading-tight tracking-[0.05em]">
+                        <span>Praktik</span>
+                        <span>Pemesinan</span>
+                        <span>CNC</span>
+                        <span>Frais</span>
+                        <span>3-Axis</span>
+                    </div>
                 </div>
-                <p class="text-[11.5px] text-[#64748B] font-medium">Media Pembelajaran Praktik Pemesinan</p>
             </div>
         </div>
 
         <!-- Quick Toolbar Buttons -->
-        <div class="flex items-center gap-2">
-            <button id="btnStockSettings" class="px-3.5 py-1.5 bg-white hover:bg-blue-50 text-[#1E3A8A] text-xs font-bold rounded-xl border border-[#CFE0F5] flex items-center gap-1.5 transition shadow-xs">
-                <i data-lucide="box" class="w-3.5 h-3.5 text-[#0D5BC6]"></i>
-                <span>Dimensi</span>
+        <div class="flex items-center gap-2.5">
+            <!-- Setup Tools -->
+            <button id="btnStockSettings" class="px-4 py-2 bg-white hover:bg-blue-50/70 text-[#1E3A8A] text-xs font-bold rounded-xl border border-[#CFE0F5] hover:border-blue-300 flex items-center gap-2 transition shadow-xs cursor-pointer">
+                <i data-lucide="box" class="w-4 h-4 text-[#0D5BC6]"></i>
+                <span>Dimensi Bahan</span>
             </button>
-            <button id="btnCheatsheetModal" class="px-3.5 py-1.5 bg-white hover:bg-blue-50 text-[#1E3A8A] text-xs font-bold rounded-xl border border-[#CFE0F5] flex items-center gap-1.5 transition shadow-xs">
-                <i data-lucide="book-open" class="w-3.5 h-3.5 text-[#0D5BC6]"></i>
-                <span>Kamus Kode</span>
+            <button id="btnCheatsheetModal" class="px-4 py-2 bg-white hover:bg-blue-50/70 text-[#1E3A8A] text-xs font-bold rounded-xl border border-[#CFE0F5] hover:border-blue-300 flex items-center gap-2 transition shadow-xs cursor-pointer">
+                <i data-lucide="book-open" class="w-4 h-4 text-[#0D5BC6]"></i>
+                <span>Kamus Kode G/M</span>
             </button>
-            <button id="btnExportCode" class="px-3.5 py-1.5 bg-white hover:bg-blue-50 text-[#1E3A8A] text-xs font-bold rounded-xl border border-[#CFE0F5] flex items-center gap-1.5 transition shadow-xs" title="Download G-Code (.nc)">
-                <i data-lucide="download" class="w-3.5 h-3.5 text-[#0D5BC6]"></i>
+
+            <!-- Subtle Divider -->
+            <div class="h-6 w-px bg-[#DCE7F5] mx-1"></div>
+
+            <!-- Export Tools -->
+            <button id="btnExportCode" class="px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 hover:text-[#0D5BC6] text-xs font-bold rounded-xl border border-[#CFE0F5] hover:border-blue-300 flex items-center gap-2 transition shadow-xs cursor-pointer" title="Download G-Code (.nc)">
+                <i data-lucide="download" class="w-4 h-4 text-[#0D5BC6]"></i>
                 <span>Export NC</span>
             </button>
-            <button id="btnExportImage" class="px-3.5 py-1.5 bg-white hover:bg-blue-50 text-[#1E3A8A] text-xs font-bold rounded-xl border border-[#CFE0F5] flex items-center gap-1.5 transition shadow-xs" title="Download Screenshot Kurva (.png)">
-                <i data-lucide="camera" class="w-3.5 h-3.5 text-[#0D5BC6]"></i>
+            <button id="btnExportImage" class="px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 hover:text-[#0D5BC6] text-xs font-bold rounded-xl border border-[#CFE0F5] hover:border-blue-300 flex items-center gap-2 transition shadow-xs cursor-pointer" title="Download Screenshot Kurva (.png)">
+                <i data-lucide="camera" class="w-4 h-4 text-[#0D5BC6]"></i>
                 <span>Screenshot</span>
             </button>
         </div>
@@ -511,13 +528,10 @@
     </main>
 
     <!-- FOOTER INFO -->
-    <footer class="bg-white border-t border-[#DCE7F5] px-5 py-2 text-[11px] text-[#64748B] font-semibold flex items-center justify-between flex-shrink-0">
-        <div>
-            Media Pembelajaran Praktik Pemesinan CNC &copy; 2025/2026 PPG Calon Guru Teknik Mesin
-        </div>
-        <div class="flex items-center gap-3">
-            <span>Standar: ISO / Fanuc Milling XYZ (G17)</span>
-            <span>|</span>
+    <footer class="bg-white border-t border-[#DCE7F5] px-4 sm:px-6 lg:px-8 py-2.5 text-[#64748B] font-semibold flex items-center justify-center flex-shrink-0 overflow-hidden">
+        <div class="flex items-center justify-center text-[10.5px] sm:text-[11px] md:text-[11.5px] lg:text-[12px] tracking-[0.06em] sm:tracking-[0.14em] md:tracking-[0.2em] lg:tracking-[0.26em] [word-spacing:0.15rem] sm:[word-spacing:0.35rem] md:[word-spacing:0.55rem] lg:[word-spacing:0.75rem] whitespace-nowrap">
+            <span><span class="font-bold text-[#0F172A]">Media Pembelajaran Praktik Pemesinan CNC</span> &copy; 2025/2026 PPG Calon Guru Teknik Mesin</span>
+            <span class="text-slate-300 font-light mx-2 sm:mx-3 md:mx-5 lg:mx-6 tracking-normal [word-spacing:normal]">|</span>
             <span class="text-[#0F172A] font-bold">Muhammad Harist Mishbahuddin</span>
         </div>
     </footer>
