@@ -1,0 +1,266 @@
+/* 
+ * CNC Milling EduSim - Clean Card Style / Friendly UI Theme
+ * Matching Reference Design: "Layout Card Style / Friendly UI"
+ * Standard: ISO / Fanuc 3-Axis Milling (XYZ Plane)
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Fira+Code:wght@400;500;600;700&display=swap');
+
+:root {
+    --bg-main: #EDF5FD;          /* Soft tech blue canvas background */
+    --bg-card: #FFFFFF;          /* Pure white cards */
+    --border-card: #DCE7F5;      /* Crisp light blue-gray card border */
+    --border-subtle: #CFE0F5;    /* Button border */
+    --primary-blue: #0D5BC6;     /* Royal blue primary brand */
+    --primary-blue-hover: #0A4EA8;
+    --text-main: #0F172A;        /* Slate-900 dark text */
+    --text-muted: #64748B;       /* Slate-500 muted text */
+    
+    /* Status Accents */
+    --accent-success: #10b981;
+    --accent-warning: #f59e0b;
+    --accent-info: #0ea5e9;
+    --accent-danger: #ef4444;
+    
+    /* Font Families */
+    --font-sans: 'Inter', sans-serif;
+    --font-mono: 'Fira Code', monospace;
+}
+
+body {
+    font-family: var(--font-sans);
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    overflow-x: hidden;
+}
+
+code, pre, .font-mono {
+    font-family: var(--font-mono);
+}
+
+/* Custom Clean Scrollbars */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: #F1F5F9;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb {
+    background: #CBD5E1;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #94A3B8;
+}
+
+/* Friendly Rounded Cards */
+.portfolio-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-card);
+    border-radius: 20px;
+    box-shadow: 0 4px 20px -2px rgba(15, 41, 77, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.portfolio-card-white {
+    background-color: #FFFFFF;
+    border: 1px solid var(--border-card);
+    border-radius: 20px;
+    box-shadow: 0 4px 20px -2px rgba(15, 41, 77, 0.05);
+}
+
+/* Left Pane View Switcher Tabs */
+.view-tab-btn {
+    transition: all 0.18s ease;
+    border: 1px solid transparent;
+}
+
+.view-tab-btn.active-view-tab {
+    background-color: var(--primary-blue) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 2px 8px rgba(13, 91, 198, 0.25);
+    border-color: var(--primary-blue) !important;
+}
+
+.view-tab-btn:not(.active-view-tab) {
+    background-color: #FFFFFF;
+    color: #1E40AF;
+    border: 1px solid var(--border-card);
+}
+.view-tab-btn:not(.active-view-tab):hover {
+    background-color: #F0F6FE;
+    color: #0F172A;
+}
+
+/* Top View Mode Buttons (2D vs 3D vs Wujud Jadi vs WCS) */
+.view-mode-btn {
+    transition: all 0.15s ease;
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 6px 13px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.view-mode-btn.active-mode {
+    background-color: var(--primary-blue) !important;
+    color: #FFFFFF !important;
+    box-shadow: 0 2px 8px rgba(13, 91, 198, 0.25);
+    border: 1px solid var(--primary-blue);
+}
+
+.view-mode-btn:not(.active-mode) {
+    background-color: #FFFFFF;
+    color: #1E3A8A;
+    border: 1px solid var(--border-subtle);
+}
+.view-mode-btn:not(.active-mode):hover {
+    background-color: #F0F6FE;
+    border-color: #93C5FD;
+}
+
+/* Editor Container */
+.editor-container {
+    position: relative;
+    display: flex;
+    font-family: var(--font-mono);
+    font-size: 13.5px;
+    line-height: 1.65;
+    background-color: #FFFFFF !important;
+    color-scheme: light !important;
+    border: 1px solid var(--border-card);
+    border-radius: 14px;
+    overflow: hidden;
+    height: 100%;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.line-numbers {
+    padding: 12px 8px;
+    background: #F8FAFC;
+    color: #94A3B8;
+    user-select: none;
+    text-align: right;
+    border-right: 1px solid #E2E8F0;
+    min-width: 44px;
+    font-weight: 600;
+    overflow-y: hidden;
+    cursor: pointer;
+    box-sizing: border-box;
+    font-size: 12.5px;
+}
+
+.line-numbers div {
+    height: 22px;
+    line-height: 22px;
+    box-sizing: border-box;
+    padding-right: 4px;
+}
+
+.line-numbers div.active-line-num {
+    color: var(--primary-blue);
+    font-weight: 800;
+    background: #EFF6FF;
+    border-left: 3px solid var(--primary-blue);
+    border-radius: 2px;
+}
+
+.code-textarea {
+    flex: 1;
+    padding: 12px 14px;
+    background-color: #FFFFFF !important;
+    color-scheme: light !important;
+    color: #0F172A !important;
+    caret-color: #0D5BC6 !important;
+    border: none;
+    outline: none;
+    resize: none;
+    white-space: pre;
+    overflow-wrap: normal;
+    overflow-x: auto;
+    overflow-y: auto;
+    font-family: var(--font-mono);
+    font-size: 13.5px;
+    line-height: 22px;
+    tab-size: 4;
+    font-weight: 500;
+    box-sizing: border-box;
+}
+
+/* Canvas Container */
+.canvas-wrapper {
+    position: relative;
+    background: #081024;
+    border: 1px solid var(--border-card);
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+/* Legend Pills */
+.legend-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 700;
+    transition: all 0.15s ease;
+    user-select: none;
+}
+
+/* Modal Backdrop */
+.modal-backdrop {
+    background-color: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(6px);
+}
+
+/* Active Simulation Pulse Animation */
+@keyframes sim-active-glow {
+    0%, 100% {
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.35);
+    }
+    50% {
+        box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.65);
+    }
+}
+
+.sim-running {
+    animation: sim-active-glow 1.8s infinite ease-in-out;
+}
+
+/* Table active row highlight */
+.active-table-row {
+    background: #EFF6FF !important;
+    border-left: 4px solid var(--primary-blue) !important;
+    font-weight: 700;
+}
+
+/* WCS 5-Point Selector Widget */
+.wcs-point-btn {
+    position: relative;
+    user-select: none;
+    transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+}
+.wcs-point-btn.active-wcs {
+    background-color: var(--primary-blue) !important;
+    color: #FFFFFF !important;
+    border-color: var(--primary-blue) !important;
+    box-shadow: 0 2px 6px rgba(13, 91, 198, 0.3);
+    transform: scale(1.02);
+}
+.wcs-point-btn.active-wcs .dot-indicator {
+    background-color: #f59e0b !important;
+    border-color: #ffffff !important;
+    box-shadow: 0 0 6px rgba(245, 158, 11, 0.9);
+}
+.wcs-point-btn:not(.active-wcs):hover {
+    background-color: #F0F6FE;
+    border-color: #93C5FD;
+}

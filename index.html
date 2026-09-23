@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNC Milling EduSim - Media Pembelajaran CNC Frais | PPG Calon Guru</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Custom Style -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-[#EDF5FD] text-[#0F172A] flex flex-col h-screen overflow-hidden">
+
+    <!-- TOP NAVIGATION BAR (Rounded Card Style) -->
+    <header class="bg-white border border-[#DCE7F5] rounded-2xl mx-3.5 mt-3 px-5 py-2.5 flex items-center justify-between flex-shrink-0 z-20 shadow-sm">
+        <div class="flex items-center gap-3.5">
+            <!-- 3D Milling Machine Isometric Graphic Icon -->
+            <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-100 via-sky-50 to-indigo-100 border border-blue-200 flex items-center justify-center shadow-xs text-blue-700 flex-shrink-0 overflow-hidden">
+                <svg class="w-8 h-8" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Base Machine Bed (Isometric) -->
+                    <path d="M32 46L8 34L32 22L56 34L32 46Z" fill="#CBD5E1" stroke="#475569" stroke-width="1.8" stroke-linejoin="round"/>
+                    <path d="M8 34L8 42L32 54L32 46L8 34Z" fill="#94A3B8" stroke="#475569" stroke-width="1.8" stroke-linejoin="round"/>
+                    <path d="M56 34L56 42L32 54L32 46L56 34Z" fill="#64748B" stroke="#475569" stroke-width="1.8" stroke-linejoin="round"/>
+                    <!-- Vice / Workpiece on Bed -->
+                    <path d="M32 38L20 32L32 26L44 32L32 38Z" fill="#0284C7" stroke="#0369A1" stroke-width="1.2" stroke-linejoin="round"/>
+                    <path d="M20 32L20 35L32 41L32 38L20 32Z" fill="#0369A1"/>
+                    <path d="M44 32L44 35L32 41L32 38L44 32Z" fill="#075985"/>
+                    <!-- Column & Spindle Head -->
+                    <path d="M26 12L38 12L38 24L26 24Z" fill="#334155" stroke="#1E293B" stroke-width="1.5"/>
+                    <path d="M29 24L35 24L33.5 30L30.5 30Z" fill="#94A3B8" stroke="#475569" stroke-width="1"/>
+                    <!-- Endmill Bit (Orange/Amber) -->
+                    <path d="M31 30L33 30L32.5 35L31.5 35Z" fill="#F59E0B" stroke="#D97706" stroke-width="0.8"/>
+                </svg>
+            </div>
+            <div>
+                <div class="flex items-center gap-2.5">
+                    <h1 class="font-extrabold text-lg tracking-tight text-[#0F172A] flex items-center gap-1.5">
+                        CNC Milling <span class="text-[#0D5BC6]">EduSim</span>
+                    </h1>
+                    <span class="bg-[#FEF3C7] border border-[#FDE68A] text-[#92400E] font-bold text-[11px] px-3 py-0.5 rounded-full flex items-center gap-1.5 shadow-xs">
+                        <i data-lucide="graduation-cap" class="w-3.5 h-3.5 text-amber-600"></i>
+                        PPG Calon Guru 2025
+                    </span>
+                </div>
+                <p class="text-[11.5px] text-[#64748B] font-medium">Media Pembelajaran Praktik Pemesinan</p>
+            </div>
+        </div>
+
+        <!-- Quick Toolbar Buttons -->
+        <div class="flex items-center gap-2">
+            <button id="btnStockSettings" class="px-3.5 py-1.5 bg-white hover:bg-blue-50 text-[#1E3A8A] text-xs font-bold rounded-xl border border-[#CFE0F5] flex items-center gap-1.5 transition shadow-xs">
+                <i data-lucide="box" class="w-3.5 h-3.5 text-[#0D5BC6]"></i>
+                <span>Dimensi</span>
+            </button>
+            <button id="btnCheatsheetModal" class="px-3.5 py-1.5 bg-white hover:bg-blue-50 text-[#1E3A8A] text-xs font-bold rounded-xl border border-[#CFE0F5] flex items-center gap-1.5 transition shadow-xs">
+                <i data-lucide="book-open" class="w-3.5 h-3.5 text-[#0D5BC6]"></i>
+                <span>Kamus Kode</span>
+            </button>
+            <button id="btnExportCode" class="px-3.5 py-1.5 bg-white hover:bg-blue-50 text-[#1E3A8A] text-xs font-bold rounded-xl border border-[#CFE0F5] flex items-center gap-1.5 transition shadow-xs" title="Download G-Code (.nc)">
+                <i data-lucide="download" class="w-3.5 h-3.5 text-[#0D5BC6]"></i>
+                <span>Export NC</span>
+            </button>
+            <button id="btnExportImage" class="px-3.5 py-1.5 bg-white hover:bg-blue-50 text-[#1E3A8A] text-xs font-bold rounded-xl border border-[#CFE0F5] flex items-center gap-1.5 transition shadow-xs" title="Download Screenshot Kurva (.png)">
+                <i data-lucide="camera" class="w-3.5 h-3.5 text-[#0D5BC6]"></i>
+                <span>Screenshot</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN TWO-COLUMN SPLIT WORKSPACE -->
+    <main class="flex-1 flex flex-col lg:flex-row overflow-hidden p-3.5 gap-3.5 min-h-0">
+        
+        <!-- BAGIAN 1 (KIRI): INPUT PROGRAM MANUAL & TABEL (50% Width) -->
+        <section class="w-full lg:w-1/2 flex flex-col gap-2.5 min-h-0 bg-white border border-[#DCE7F5] rounded-2xl p-3.5 shadow-xs">
+            
+            <!-- Header Input Program Manual -->
+            <div class="flex items-center justify-between pb-2 border-b border-slate-100 flex-shrink-0">
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 rounded-lg bg-[#0F172A] text-white flex items-center justify-center shadow-xs">
+                        <i data-lucide="code-2" class="w-3.5 h-3.5 stroke-[2.5]"></i>
+                    </div>
+                    <label class="text-xs font-extrabold text-[#0F172A]">
+                        Input Program Manual (CNC Frais):
+                    </label>
+                </div>
+                <div class="flex items-center gap-1.5 flex-wrap">
+                    <button id="btnNewProgram" class="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-300 flex items-center gap-1 transition shadow-xs" title="Mulai lembar kerja program manual baru">
+                        <i data-lucide="plus" class="w-3.5 h-3.5 text-emerald-600"></i>
+                        <span>Program Baru</span>
+                    </button>
+                    <button id="btnUploadNC" class="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-white hover:bg-blue-50 text-blue-700 border border-blue-300 flex items-center gap-1 transition shadow-xs" title="Buka file program G-Code (.nc, .txt, .tap)">
+                        <i data-lucide="folder-open" class="w-3.5 h-3.5 text-blue-600"></i>
+                        <span>Buka File</span>
+                    </button>
+                    <input type="file" id="fileInputNC" accept=".nc,.txt,.tap,.cnc,.gcode" class="hidden">
+                </div>
+            </div>
+
+            <!-- View Switcher Tabs: [ 1. Teks G-Code ] vs [ 2. Input Tabel ] vs [ 3. Penjelas Baris ] -->
+            <div class="flex items-center justify-between gap-1 flex-shrink-0">
+                <div class="flex items-center gap-1.5 flex-1 overflow-x-auto">
+                    <button id="viewBtnEditor" class="view-tab-btn active-view-tab py-1.5 px-3 rounded-xl flex items-center gap-1.5 font-bold text-xs whitespace-nowrap cursor-pointer" title="Editor Teks Program G-Code Manual">
+                        <i data-lucide="code-2" class="w-3.5 h-3.5"></i>
+                        <span>1. Teks G-Code</span>
+                    </button>
+                    <button id="viewBtnTable" class="view-tab-btn py-1.5 px-3 rounded-xl flex items-center gap-1.5 font-bold text-xs whitespace-nowrap cursor-pointer" title="Input & Modifikasi Angka Koordinat Manual Interaktif">
+                        <i data-lucide="table-properties" class="w-3.5 h-3.5"></i>
+                        <span>2. Input Tabel Koordinat</span>
+                    </button>
+                    <button id="viewBtnExplain" class="view-tab-btn py-1.5 px-3 rounded-xl flex items-center gap-1.5 font-bold text-xs whitespace-nowrap cursor-pointer" title="Tabel Koordinat & Penjelas Fungsi Setiap Baris Program">
+                        <i data-lucide="list-ordered" class="w-3.5 h-3.5"></i>
+                        <span>3. Penjelas Baris Program</span>
+                    </button>
+                </div>
+                <div class="flex items-center gap-1 pr-1 flex-shrink-0">
+                    <button id="btnUppercase" class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 transition cursor-pointer" title="Ubah seluruh huruf menjadi kapital (A-Z)">KAPITAL</button>
+                    <button id="btnCopyCode" class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 transition cursor-pointer" title="Salin semua kode">Salin</button>
+                </div>
+            </div>
+
+            <!-- VIEW 1: G-CODE CODE EDITOR -->
+            <div id="viewPaneEditor" class="flex-1 flex flex-col min-h-0">
+                <div class="editor-container flex-1">
+                    <div id="lineNumbers" class="line-numbers">
+                        <div>1</div>
+                    </div>
+                    <textarea id="codeTextarea" class="code-textarea" placeholder="Ketik atau tempel program G-Code frais di sini..." spellcheck="false"></textarea>
+                </div>
+            </div>
+
+            <!-- VIEW 2: INTERACTIVE REAL-TIME COORDINATE POINT TABLE -->
+            <div id="viewPaneTable" class="hidden flex-1 flex flex-col min-h-0 bg-[#FFFFFF] border border-[#DCE7F5] rounded-xl overflow-hidden shadow-xs">
+                <div class="bg-[#F8FAFC] px-3 py-1.5 border-b border-[#DCE7F5] flex items-center justify-between flex-shrink-0 text-xs text-[#0F172A]">
+                    <div class="flex items-center gap-2">
+                        <span class="font-extrabold text-[#0F172A] flex items-center gap-1.5">
+                            <i data-lucide="edit-3" class="w-3.5 h-3.5 text-emerald-600"></i>
+                            Tabel Input Koordinat Pahat Frais (3-Axis)
+                        </span>
+                        <span class="text-[10px] bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded-full border border-emerald-200">
+                            Mode Interaktif
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <button id="btnAddTableRow" class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[#0D5BC6] hover:bg-[#0A4EA8] text-white flex items-center gap-1 transition shadow-xs cursor-pointer">
+                            <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+                            <span>+ Tambah Baris</span>
+                        </button>
+                        <button id="btnClearTableRows" class="px-2 py-1 rounded-lg text-[11px] font-bold bg-white hover:bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-1 transition shadow-xs cursor-pointer">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            <span>Kosongkan Tabel</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="flex-1 overflow-y-auto">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead class="bg-[#F1F5F9] text-[#0F172A] text-[11px] sticky top-0 border-b border-[#DCE7F5] font-bold z-10">
+                            <tr>
+                                <th class="p-2 font-mono w-14 text-center">Baris</th>
+                                <th class="p-2 w-28">Kode (G)</th>
+                                <th class="p-2 font-mono text-rose-600 w-24">Target X</th>
+                                <th class="p-2 font-mono text-emerald-600 w-24">Target Y</th>
+                                <th class="p-2 font-mono text-sky-600 w-24">Target Z</th>
+                                <th class="p-2 font-mono text-amber-600 w-20">Radius (R)</th>
+                                <th class="p-2 font-mono text-slate-600 w-20">Feed (F)</th>
+                                <th class="p-2 w-12 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="coordinateTableBody" class="divide-y divide-[#E2E8F0] font-mono text-[11.5px]">
+                            <!-- Populated dynamically with interactive inputs -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="bg-[#F8FAFC] px-3 py-1.5 border-t border-[#DCE7F5] flex items-center justify-between text-[11px] text-[#64748B] flex-shrink-0">
+                    <span class="flex items-center gap-1.5">
+                        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-500"></i>
+                        <span>Input angka di tabel otomatis tersinkron ke teks G-Code dan simulasi 3D.</span>
+                    </span>
+                    <button id="btnAppendRowBottom" class="font-bold text-[#0D5BC6] hover:text-[#0A4EA8] flex items-center gap-1 cursor-pointer">
+                        <i data-lucide="plus" class="w-3.5 h-3.5"></i> Tambah Titik
+                    </button>
+                </div>
+            </div>
+
+            <!-- VIEW 3: READ-ONLY EXPLANATORY COORDINATE & FUNCTION TABLE -->
+            <div id="viewPaneExplain" class="hidden flex-1 flex flex-col min-h-0 bg-[#FFFFFF] border border-[#DCE7F5] rounded-xl overflow-hidden shadow-xs">
+                <div class="bg-[#F8FAFC] px-3 py-1.5 border-b border-[#DCE7F5] flex items-center justify-between flex-shrink-0 text-xs text-[#0F172A]">
+                    <div class="flex items-center gap-2">
+                        <span class="font-extrabold text-[#0F172A] flex items-center gap-1.5">
+                            <i data-lucide="book-open" class="w-3.5 h-3.5 text-[#0D5BC6]"></i>
+                            Tabel Penjelas Baris Program & Koordinat Pahat
+                        </span>
+                        <span class="text-[10px] bg-blue-50 text-blue-800 font-bold px-2 py-0.5 rounded-full border border-blue-200">
+                            Mode Edukasi
+                        </span>
+                    </div>
+                    <span class="text-[11px] text-[#64748B] font-medium flex items-center gap-1">
+                        <i data-lucide="play-circle" class="w-3.5 h-3.5 text-emerald-600"></i>
+                        Highlight aktif otomatis saat simulasi running
+                    </span>
+                </div>
+                <div class="flex-1 overflow-y-auto">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead class="bg-[#F1F5F9] text-[#0F172A] text-[11px] sticky top-0 border-b border-[#DCE7F5] font-bold z-10">
+                            <tr>
+                                <th class="p-2 font-mono w-14 text-center">Baris</th>
+                                <th class="p-2 w-16 text-center">Kode</th>
+                                <th class="p-2 font-mono text-rose-600 w-20">Target X</th>
+                                <th class="p-2 font-mono text-emerald-600 w-20">Target Y</th>
+                                <th class="p-2 font-mono text-sky-600 w-20">Target Z</th>
+                                <th class="p-2 font-mono text-amber-600 w-20">Radius</th>
+                                <th class="p-2">Arah Gerak / Penjelasan Fungsi Baris</th>
+                            </tr>
+                        </thead>
+                        <tbody id="explainTableBody" class="divide-y divide-[#E2E8F0] font-mono text-[11.5px]">
+                            <!-- Populated dynamically with line explanations -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="bg-[#F8FAFC] px-3 py-1.5 border-t border-[#DCE7F5] flex items-center justify-between text-[11px] text-[#64748B] flex-shrink-0">
+                    <span class="flex items-center gap-1.5">
+                        <i data-lucide="mouse-pointer-click" class="w-3.5 h-3.5 text-slate-500"></i>
+                        <span>Klik baris mana saja untuk langsung menyorot posisi barisnya di editor teks.</span>
+                    </span>
+                    <span id="explainRowCountBadge" class="font-bold text-slate-700 font-mono text-[10px] bg-white px-2 py-0.5 rounded-lg border border-[#DCE7F5]">
+                        0 Baris
+                    </span>
+                </div>
+            </div>
+
+            <!-- COLLAPSIBLE DIAGNOSTIC PANEL (Validation Card Matching Reference) -->
+            <div class="bg-white border border-[#DCE7F5] rounded-xl flex flex-col overflow-hidden flex-shrink-0 shadow-xs">
+                <div class="bg-[#F8FAFC] px-3 py-2 border-b border-[#DCE7F5] flex items-center justify-between flex-shrink-0">
+                    <div class="text-xs font-extrabold text-[#0F172A] flex items-center gap-1.5">
+                        <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600"></i>
+                        <span>Validasi Sintaks & Kurva Koordinat Frais:</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 text-[11px]">
+                        <span class="px-2.5 py-0.5 rounded-full bg-[#FEE2E2] text-[#DC2626] font-bold border border-[#FECACA] flex items-center gap-1">
+                            <i data-lucide="x-circle" class="w-3 h-3"></i>
+                            <span id="errorCountBadge">0</span> Error
+                        </span>
+                        <span class="px-2.5 py-0.5 rounded-full bg-[#FEF3C7] text-[#D97706] font-bold border border-[#FDE68A] flex items-center gap-1">
+                            <i data-lucide="alert-circle" class="w-3 h-3"></i>
+                            <span id="warningCountBadge">0</span> Peringatan
+                        </span>
+                    </div>
+                </div>
+                <div id="diagnosticsList" class="p-2.5 flex flex-col gap-1.5 max-h-24 overflow-y-auto">
+                    <!-- Populated dynamically, defaults to clean green card -->
+                    <div class="flex items-center gap-2.5 p-2.5 bg-[#ECFDF5] border border-[#A7F3D0] rounded-xl text-[#065F46] text-xs font-semibold">
+                        <div class="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center flex-shrink-0">
+                            <i data-lucide="check" class="w-3.5 h-3.5 stroke-[3]"></i>
+                        </div>
+                        <span>Program Valid & Bebas Error! Koordinat siap disimulasikan di mesin frais.</span>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- BAGIAN 2 (KANAN): SIMULATION VIEWPORT & CONSOLE (50% Width) -->
+        <section class="w-full lg:w-1/2 flex flex-col gap-2.5 min-h-0 bg-white border border-[#DCE7F5] rounded-2xl p-3.5 shadow-xs">
+            
+            <!-- 1. TOP HEADER ROW: Title, Mode badge, Progress -->
+            <div class="flex items-center justify-between flex-shrink-0">
+                <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 rounded-lg bg-[#0D5BC6] text-white flex items-center justify-center shadow-xs">
+                        <i data-lucide="box" class="w-3.5 h-3.5 stroke-[2.5]"></i>
+                    </div>
+                    <h2 class="font-extrabold text-sm tracking-tight text-[#0F172A]">
+                        Simulasi Jalankan
+                    </h2>
+                    <span id="liveTraceModeBadge" class="bg-[#10B981] text-white font-bold text-[10.5px] px-2.5 py-0.5 rounded-full flex items-center gap-1.5 shadow-xs">
+                        <span id="liveTraceStatusDot" class="w-2 h-2 rounded-full bg-white"></span>
+                        G00 RAPID
+                    </span>
+                </div>
+                <div class="flex items-center gap-2.5">
+                    <span class="text-slate-600 font-bold text-xs">Progress: <span id="liveTracePct">0%</span></span>
+                    <div class="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+                        <div id="liveTraceProgressBar" class="h-full bg-[#0D5BC6] w-0 transition-all duration-75"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- View Switcher Toolbar Buttons (2D Top vs 3D Isometric + WCS) -->
+            <div class="flex items-center gap-1.5 flex-shrink-0 overflow-x-auto">
+                <button id="btnView2D" class="view-mode-btn active-mode" title="Tampak Atas (Bidang Kerja XY)">
+                    <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i>
+                    <span>2D Tampak Atas (XY)</span>
+                </button>
+                <button id="btnViewIso" class="view-mode-btn" title="Ruang Simulasi Pemotongan 3D Isometrik (X, Y, Z)">
+                    <i data-lucide="box" class="w-3.5 h-3.5"></i>
+                    <span>3D Isometrik</span>
+                </button>
+                <button id="btnQuickWCS" class="view-mode-btn" title="Ubah Posisi Titik Nol Benda Kerja (WCS G54: 4 Sudut & Center)">
+                    <i data-lucide="crosshair" class="w-3.5 h-3.5 text-blue-600"></i>
+                    <span id="quickWCSLabel">G54: Kiri-Bawah</span>
+                </button>
+                <button id="btnDebugMode" class="view-mode-btn text-purple-700 hover:text-purple-900 border-purple-200" title="Mode Debug Sinkronisasi Toolpath & Workpiece (HUD Inspeksi Geometri)">
+                    <i data-lucide="bug" class="w-3.5 h-3.5 text-purple-600"></i>
+                    <span>Debug Sync</span>
+                </button>
+            </div>
+
+            <!-- Hidden Telemetry Strings (Kept for script synchronization) -->
+            <span id="liveTraceBlock" class="hidden">G00 X0.00 Y0.00 Z20.00</span>
+            <span id="liveTraceDesc" class="hidden">Pisau frais siap di posisi awal aman.</span>
+            <button id="btnFinishedInspect" class="hidden"></button>
+
+            <!-- 2. CANVAS VIEWPORT -->
+            <div class="canvas-wrapper flex-1 relative rounded-xl overflow-hidden border border-[#DCE7F5] bg-[#081024]">
+                <canvas id="millingCanvas" class="w-full h-full cursor-crosshair"></canvas>
+                <div id="threeCanvasContainer" class="w-full h-full absolute inset-0 hidden"></div>
+
+                <!-- Floating Canvas Top-Right Quick Toolbar -->
+                <div class="absolute top-3 right-3 flex flex-col gap-1.5 z-10">
+                    <button id="btnFitView" class="p-2 bg-[#0F172A]/85 hover:bg-[#0F172A] text-white rounded-xl border border-white/20 shadow-md transition cursor-pointer" title="Pusatkan Tampilan (Fit to Screen)">
+                        <i data-lucide="maximize" class="w-4 h-4 text-white"></i>
+                    </button>
+                    <button id="btnReset3DView" class="p-2 bg-[#0F172A]/85 hover:bg-[#0F172A] text-white rounded-xl border border-white/20 shadow-md transition cursor-pointer hidden" title="Reset Sudut Putar 3D (Isometrik Standar)">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4 text-amber-300"></i>
+                    </button>
+                </div>
+
+                <!-- Floating 3D Rotation Hint Badge -->
+                <div id="hint3DRotate" class="absolute top-3 left-3 hidden items-center gap-1.5 bg-[#0F172A]/90 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/20 text-xs text-slate-200 font-medium pointer-events-none shadow-md z-10">
+                    <i data-lucide="orbit" class="w-3.5 h-3.5 text-sky-400"></i>
+                    <span>Tahan & Geser Mouse untuk <strong>Memutar 3D Bebas (Orbit)</strong></span>
+                </div>
+
+                <!-- Floating Debug Mode Inspector Overlay -->
+                <div id="debugInspectorPanel" class="absolute bottom-3 left-3 hidden flex flex-col gap-1.5 bg-[#0A0F1D]/95 backdrop-blur-md p-3 rounded-xl border border-purple-500/40 text-[11px] font-mono text-slate-200 shadow-2xl z-20 max-w-sm pointer-events-auto select-text">
+                    <div class="flex items-center justify-between border-b border-purple-500/30 pb-1 mb-0.5">
+                        <div class="flex items-center gap-1.5 font-bold text-purple-300 text-[11px]">
+                            <i data-lucide="terminal" class="w-3.5 h-3.5 text-purple-400"></i>
+                            <span>TOOLPATH & WORKPIECE SYNC DEBUG</span>
+                        </div>
+                        <button id="btnCloseDebugPanel" class="text-slate-400 hover:text-white p-0.5 rounded cursor-pointer">
+                            <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+
+                    <!-- Synchronicity Badge -->
+                    <div id="debugSyncStatus" class="flex items-center gap-1.5 px-2 py-1 rounded bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 font-semibold text-[10px]">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span id="debugSyncStatusText">100% SYNCHRONIZED (ONE TOOLPATH)</span>
+                    </div>
+
+                    <!-- 1. Origin G54 -->
+                    <div class="grid grid-cols-2 gap-2 bg-slate-900/60 p-1.5 rounded border border-slate-800">
+                        <div>
+                            <span class="text-slate-400 block text-[9.5px]">ORIGIN G54 WCS:</span>
+                            <span id="debugWCSOrigin" class="font-bold text-sky-300">BL (0.0, 0.0, 0.0)</span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 block text-[9.5px]">TOOL DIAMETER:</span>
+                            <span id="debugToolD" class="font-bold text-amber-300">D10 mm (R 5.0 mm)</span>
+                        </div>
+                    </div>
+
+                    <!-- 2. Realtime Cutter Position -->
+                    <div class="bg-slate-900/60 p-1.5 rounded border border-slate-800">
+                        <span class="text-slate-400 block text-[9.5px]">CUTTER POS (X, Y, Z):</span>
+                        <div class="flex items-center gap-3 font-bold text-xs mt-0.5">
+                            <span class="text-rose-400">X: <span id="debugCutterX">0.00</span></span>
+                            <span class="text-emerald-400">Y: <span id="debugCutterY">0.00</span></span>
+                            <span class="text-sky-400">Z: <span id="debugCutterZ">20.00</span></span>
+                        </div>
+                    </div>
+
+                    <!-- 3. Active Segment Details -->
+                    <div class="bg-slate-900/60 p-1.5 rounded border border-slate-800">
+                        <div class="flex justify-between items-center text-[9.5px] text-slate-400 mb-0.5">
+                            <span>ACTIVE SEGMENT:</span>
+                            <span id="debugSegType" class="px-1.5 py-0.2 rounded font-bold bg-rose-900/80 text-rose-200 border border-rose-600/40">G00 RAPID</span>
+                        </div>
+                        <div class="space-y-0.5 text-[10px]">
+                            <div>Start: <span id="debugSegStart" class="text-slate-300">-</span></div>
+                            <div>End: <span id="debugSegEnd" class="text-slate-300">-</span></div>
+                            <div id="debugArcInfoRow" class="hidden text-amber-300">Center: <span id="debugSegCenter">-</span> | Rad: <span id="debugSegRadius">-</span></div>
+                            <div>Feed: <span id="debugSegFeed" class="text-slate-300">- mm/min</span> | Depth: <span id="debugSegDepth" class="text-sky-300">- mm</span></div>
+                        </div>
+                    </div>
+
+                    <!-- 4. Toolpath BBox vs Machining BBox -->
+                    <div class="bg-slate-900/60 p-1.5 rounded border border-slate-800 space-y-0.5">
+                        <span class="text-slate-400 block text-[9.5px]">BBOX VALIDATION (Δ = R_tool):</span>
+                        <div class="text-[9.5px] space-y-0.5">
+                            <div>Toolpath: <span id="debugToolpathBBox" class="text-sky-300 font-bold">-</span></div>
+                            <div>Machined: <span id="debugMachiningBBox" class="text-purple-300 font-bold">-</span></div>
+                            <div>Offset Verification: <span id="debugOffsetCheck" class="text-emerald-300 font-bold">Pass (Δ = 5.0mm)</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Warning alert if difference != toolRadius -->
+                    <div id="debugWarningBanner" class="hidden p-1.5 rounded bg-rose-950/90 border border-rose-500/80 text-rose-200 text-[9.5px]">
+                        <span class="font-bold flex items-center gap-1"><i data-lucide="alert-triangle" class="w-3 h-3 text-rose-400"></i> PERINGATAN:</span>
+                        <span id="debugWarningText" class="block mt-0.5"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. LEGEND PILLS ROW (Matching Reference Image) -->
+            <div class="flex items-center justify-between gap-1 flex-wrap flex-shrink-0 text-xs">
+                <span class="legend-pill bg-[#FEE2E2] text-[#DC2626] border border-[#FECACA]">
+                    <span class="w-2 h-2 rounded-full bg-[#EF4444]"></span>
+                    G00 (Rapid)
+                </span>
+                <span class="legend-pill bg-[#D1FAE5] text-[#059669] border border-[#A7F3D0]">
+                    <span class="w-2 h-2 rounded-full bg-[#10B981]"></span>
+                    G01 (Potong)
+                </span>
+                <span class="legend-pill bg-[#DBEAFE] text-[#2563EB] border border-[#BFDBFE]">
+                    <span class="w-2 h-2 rounded-full bg-[#3B82F6]"></span>
+                    G02 (CW)
+                </span>
+                <span class="legend-pill bg-[#FEF3C7] text-[#D97706] border border-[#FDE68A]">
+                    <span class="w-2 h-2 rounded-full bg-[#F59E0B]"></span>
+                    G03 (CCW)
+                </span>
+                <span class="legend-pill bg-[#EDE9FE] text-[#7C3AED] border border-[#DDD6FE]">
+                    <span class="w-2 h-2 rounded-full bg-[#8B5CF6]"></span>
+                    G81/G83 (Bor)
+                </span>
+            </div>
+
+            <!-- 4. DRO READOUT & TELEMETRY ROW (Matching Reference Image) -->
+            <div class="bg-[#F0F6FE] border border-[#DCE7F5] rounded-xl px-3 py-1.5 flex items-center justify-between flex-wrap gap-2 text-xs flex-shrink-0">
+                <div class="flex items-center gap-2 font-mono">
+                    <span class="text-slate-600 font-sans font-bold text-xs">Posisi:</span>
+                    <span class="text-slate-500 font-sans font-semibold">X</span>
+                    <span id="hudX" class="font-bold text-rose-600 bg-white px-2 py-0.5 rounded-lg border border-[#DCE7F5] shadow-xs">0.00</span>
+                    <span class="text-slate-500 font-sans font-semibold">Y</span>
+                    <span id="hudY" class="font-bold text-emerald-600 bg-white px-2 py-0.5 rounded-lg border border-[#DCE7F5] shadow-xs">0.00</span>
+                    <span class="text-slate-500 font-sans font-semibold">Z</span>
+                    <span id="hudZ" class="font-bold text-blue-600 bg-white px-2 py-0.5 rounded-lg border border-[#DCE7F5] shadow-xs">20.00</span>
+                </div>
+
+                <div class="flex items-center gap-2.5 font-mono">
+                    <div class="flex items-center gap-1">
+                        <span class="text-slate-600 font-sans font-bold">Mode:</span>
+                        <span id="hudMotion" class="font-extrabold text-emerald-700 bg-white px-2 py-0.5 rounded-lg border border-[#DCE7F5]">G00</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <span class="text-slate-600 font-sans font-bold">Feed:</span>
+                        <span id="hudFeed" class="font-bold text-purple-700 bg-white px-2 py-0.5 rounded-lg border border-[#DCE7F5]">F 150</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <span class="text-slate-600 font-sans font-bold">Pisau:</span>
+                        <span id="hudTool" class="font-bold text-amber-700 bg-white px-2 py-0.5 rounded-lg border border-[#DCE7F5]">Ø 10</span>
+                    </div>
+                    <span id="hudLine" class="hidden">N1</span>
+                    <span id="hudTime" class="hidden">0s</span>
+                </div>
+            </div>
+
+            <!-- 5. PLAYBACK BUTTONS & SPEED CONTROLS (Matching Reference Image) -->
+            <div class="flex flex-wrap items-center justify-between gap-2 flex-shrink-0">
+                <!-- Playback Buttons -->
+                <div class="flex items-center gap-2">
+                    <button id="btnReset" class="px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl border border-[#CFE0F5] flex items-center gap-1.5 transition shadow-xs">
+                        <i data-lucide="rotate-ccw" class="w-3.5 h-3.5 text-slate-600"></i>
+                        <span>Reset</span>
+                    </button>
+                    <button id="btnPlay" class="px-5 py-1.5 bg-[#0D5BC6] hover:bg-[#0A4EA8] text-white text-xs font-bold rounded-xl shadow-sm flex items-center gap-2 transition">
+                        <i data-lucide="play" class="w-3.5 h-3.5 fill-white"></i>
+                        <span>Simulasi Jalankan</span>
+                    </button>
+                    <button id="btnPause" class="px-5 py-1.5 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded-xl shadow-sm hidden items-center gap-2 transition">
+                        <i data-lucide="pause" class="w-3.5 h-3.5 fill-white"></i>
+                        <span>Jeda (Pause)</span>
+                    </button>
+                    <button id="btnStep" class="px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl border border-[#CFE0F5] flex items-center gap-1.5 transition shadow-xs">
+                        <i data-lucide="step-forward" class="w-3.5 h-3.5 text-slate-700"></i>
+                        <span>Langkah (Step)</span>
+                    </button>
+                </div>
+
+                <!-- Speed Slider -->
+                <div class="flex items-center gap-2 bg-white px-3 py-1 rounded-xl border border-[#CFE0F5] text-xs shadow-xs">
+                    <span class="text-slate-600 font-semibold text-[11px]">Kecepatan:</span>
+                    <input id="speedSlider" type="range" min="0.2" max="4.0" step="0.2" value="1.0" class="w-20 accent-[#0D5BC6] cursor-pointer">
+                    <span id="speedLabel" class="font-mono font-extrabold text-[#0F172A] w-7 text-right text-[11px]">1.0x</span>
+                </div>
+            </div>
+
+            <!-- 6. VIEW LAYER CHECKBOX TOGGLES (Matching Reference Image) -->
+            <div class="flex items-center justify-between text-xs text-[#0F172A] font-medium pt-1 border-t border-slate-100 flex-shrink-0">
+                <label class="flex items-center gap-1.5 cursor-pointer select-none">
+                    <input type="checkbox" id="toggleGrid" checked class="w-4 h-4 rounded border-slate-300 text-[#0D5BC6] focus:ring-0 cursor-pointer">
+                    <span>Grid</span>
+                </label>
+                <label class="flex items-center gap-1.5 cursor-pointer select-none">
+                    <input type="checkbox" id="toggleStock" checked class="w-4 h-4 rounded border-slate-300 text-[#0D5BC6] focus:ring-0 cursor-pointer">
+                    <span>Balok Bahan</span>
+                </label>
+                <label class="flex items-center gap-1.5 cursor-pointer select-none">
+                    <input type="checkbox" id="toggleVice" checked class="w-4 h-4 rounded border-slate-300 text-[#0D5BC6] focus:ring-0 cursor-pointer">
+                    <span>Ragum (Vice)</span>
+                </label>
+                <label class="flex items-center gap-1.5 cursor-pointer select-none">
+                    <input type="checkbox" id="toggleKerf" checked class="w-4 h-4 rounded border-slate-300 text-[#0D5BC6] focus:ring-0 cursor-pointer">
+                    <span>Lebar Pemakanan</span>
+                </label>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- FOOTER INFO -->
+    <footer class="bg-white border-t border-[#DCE7F5] px-5 py-2 text-[11px] text-[#64748B] font-semibold flex items-center justify-between flex-shrink-0">
+        <div>
+            Media Pembelajaran Praktik Pemesinan CNC &copy; 2025/2026 PPG Calon Guru Teknik Mesin
+        </div>
+        <div class="flex items-center gap-3">
+            <span>Standar: ISO / Fanuc Milling XYZ (G17)</span>
+            <span>|</span>
+            <span class="text-[#0F172A] font-bold">Muhammad Harist Mishbahuddin</span>
+        </div>
+    </footer>
+
+    <!-- MODAL 1: STOCK MATERIAL & TOOL SETTINGS -->
+    <div id="stockModal" class="modal-backdrop fixed inset-0 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white border border-[#DCE7F5] rounded-2xl p-6 w-full max-w-md shadow-2xl flex flex-col gap-4 text-[#0F172A]">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-blue-50 text-[#0D5BC6] flex items-center justify-center">
+                        <i data-lucide="box" class="w-4 h-4"></i>
+                    </div>
+                    <h3 class="font-extrabold text-sm text-[#0F172A]">Atur Dimensi Bahan Mentah & Pisau Frais</h3>
+                </div>
+                <button class="close-modal text-slate-400 hover:text-slate-700">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="grid grid-cols-2 gap-3 text-xs">
+                <div>
+                    <label class="block text-slate-700 font-bold mb-1">Panjang Balok X (mm):</label>
+                    <input id="stockXInput" type="number" value="100" min="20" max="300" class="w-full bg-slate-50 border border-[#CFE0F5] rounded-xl p-2.5 text-[#0F172A] font-mono font-bold focus:border-[#0D5BC6] focus:bg-white outline-none">
+                </div>
+                <div>
+                    <label class="block text-slate-700 font-bold mb-1">Lebar Balok Y (mm):</label>
+                    <input id="stockYInput" type="number" value="80" min="20" max="300" class="w-full bg-slate-50 border border-[#CFE0F5] rounded-xl p-2.5 text-[#0F172A] font-mono font-bold focus:border-[#0D5BC6] focus:bg-white outline-none">
+                </div>
+                <div>
+                    <label class="block text-slate-700 font-bold mb-1">Tebal Balok Z (mm):</label>
+                    <input id="stockZInput" type="number" value="25" min="5" max="100" class="w-full bg-slate-50 border border-[#CFE0F5] rounded-xl p-2.5 text-[#0F172A] font-mono font-bold focus:border-[#0D5BC6] focus:bg-white outline-none">
+                </div>
+                <div>
+                    <label class="block text-slate-700 font-bold mb-1">Diameter Pisau Endmill (Ø mm):</label>
+                    <input id="toolDiameterInput" type="number" value="10" min="2" max="50" class="w-full bg-slate-50 border border-[#CFE0F5] rounded-xl p-2.5 text-[#0F172A] font-mono font-bold focus:border-[#0D5BC6] focus:bg-white outline-none">
+                </div>
+            </div>
+            <!-- 5-Point Interactive WCS Selector Widget -->
+            <div class="flex flex-col gap-2 pt-2 border-t border-slate-100">
+                <div class="flex items-center justify-between">
+                    <label class="text-xs font-black text-[#0F172A] flex items-center gap-1.5">
+                        <i data-lucide="crosshair" class="w-4 h-4 text-rose-600"></i>
+                        <span>Titik Nol Benda Kerja (WCS G54):</span>
+                    </label>
+                    <span id="wcsActiveBadge" class="font-mono text-[10.5px] font-bold text-blue-800 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200">
+                        Kiri-Bawah (X0, Y0)
+                    </span>
+                </div>
+
+                <div class="relative bg-slate-50 border border-[#DCE7F5] rounded-xl p-3">
+                    <div class="text-[10px] text-center font-bold text-slate-500 mb-1.5 tracking-wide uppercase">
+                        — Tampak Atas Balok Bahan (Bidang XY) —
+                    </div>
+                    <div class="grid grid-cols-3 gap-1.5 h-32 border-2 border-dashed border-slate-300 rounded-lg p-2 bg-white relative">
+                        <!-- Top-Left -->
+                        <button type="button" data-wcs="top-left" class="wcs-point-btn flex flex-col items-center justify-center p-1 rounded-lg border border-slate-200 bg-white text-[10px] font-bold text-slate-700">
+                            <span class="w-3 h-3 rounded-full border-2 border-slate-400 mb-0.5 dot-indicator"></span>
+                            <span>Kiri-Atas</span>
+                        </button>
+                        <!-- Top-Center label -->
+                        <div class="flex items-center justify-center text-[10px] text-slate-400 font-semibold">
+                            Sisi Atas (+Y)
+                        </div>
+                        <!-- Top-Right -->
+                        <button type="button" data-wcs="top-right" class="wcs-point-btn flex flex-col items-center justify-center p-1 rounded-lg border border-slate-200 bg-white text-[10px] font-bold text-slate-700">
+                            <span class="w-3 h-3 rounded-full border-2 border-slate-400 mb-0.5 dot-indicator"></span>
+                            <span>Kanan-Atas</span>
+                        </button>
+                        <!-- Middle-Left label -->
+                        <div class="flex items-center justify-center text-[10px] text-slate-400 font-semibold">
+                            Sisi Kiri
+                        </div>
+                        <!-- Center Point -->
+                        <button type="button" data-wcs="center" class="wcs-point-btn flex flex-col items-center justify-center p-1 rounded-lg border border-slate-200 bg-white text-[10px] font-bold text-slate-700">
+                            <span class="w-3.5 h-3.5 rounded-full border-2 border-slate-400 mb-0.5 dot-indicator"></span>
+                            <span class="font-extrabold text-blue-700">TENGAH</span>
+                        </button>
+                        <!-- Middle-Right label -->
+                        <div class="flex items-center justify-center text-[10px] text-slate-400 font-semibold">
+                            Sisi Kanan
+                        </div>
+                        <!-- Bottom-Left (Default active) -->
+                        <button type="button" data-wcs="bottom-left" class="wcs-point-btn active-wcs flex flex-col items-center justify-center p-1 rounded-lg border border-[#0D5BC6] bg-[#0D5BC6] text-white font-bold text-[10px] shadow-xs">
+                            <span class="w-3 h-3 rounded-full bg-amber-400 border-2 border-white mb-0.5 dot-indicator shadow-xs"></span>
+                            <span>Kiri-Bawah</span>
+                        </button>
+                        <!-- Bottom-Center label -->
+                        <div class="flex items-center justify-center text-[10px] text-slate-400 font-semibold">
+                            Sisi Depan (-Y)
+                        </div>
+                        <!-- Bottom-Right -->
+                        <button type="button" data-wcs="bottom-right" class="wcs-point-btn flex flex-col items-center justify-center p-1 rounded-lg border border-slate-200 bg-white text-[10px] font-bold text-slate-700">
+                            <span class="w-3 h-3 rounded-full border-2 border-slate-400 mb-0.5 dot-indicator"></span>
+                            <span>Kanan-Bawah</span>
+                        </button>
+                    </div>
+                    <div id="wcsDescriptionText" class="mt-2 text-[10.5px] text-slate-600 font-medium bg-white p-2 rounded-lg border border-slate-200">
+                        <strong class="text-[#0F172A]">Kiri-Bawah (Standar Sekolah):</strong> Titik (0, 0) berada di sudut kiri-depan. Semua pergerakan pemesinan pada sumbu X dan Y bernilai positif (+X, +Y).
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button class="close-modal px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl">Batal</button>
+                <button id="btnSaveStock" class="px-4 py-2 bg-[#0D5BC6] hover:bg-[#0A4EA8] text-white text-xs font-bold rounded-xl shadow-xs">Terapkan Dimensi</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: G-CODE CHEATSHEET -->
+    <div id="cheatsheetModal" class="modal-backdrop fixed inset-0 flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-white border border-[#DCE7F5] rounded-2xl p-6 w-full max-w-2xl shadow-2xl flex flex-col gap-4 max-h-[85vh] text-[#0F172A]">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-lg bg-blue-50 text-[#0D5BC6] flex items-center justify-center">
+                        <i data-lucide="book-open" class="w-4 h-4"></i>
+                    </div>
+                    <h3 class="font-extrabold text-sm text-[#0F172A]">Kamus Lengkap Kode G & M (CNC Frais / Milling ISO Fanuc)</h3>
+                </div>
+                <button class="close-modal text-slate-400 hover:text-slate-700">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="overflow-y-auto flex-1 pr-1 text-xs">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-[#F0F6FE] text-[#0F172A] border-b border-[#DCE7F5] text-[11px] font-bold">
+                            <th class="p-2.5 font-mono">Kode</th>
+                            <th class="p-2.5">Nama Perintah</th>
+                            <th class="p-2.5 font-mono">Format</th>
+                            <th class="p-2.5">Keterangan</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-slate-700">
+                        <tr><td class="p-2 font-mono font-bold text-rose-600">G00</td><td class="p-2 font-bold">Gerak Cepat (Rapid)</td><td class="p-2 font-mono text-slate-800">G00 X.. Y.. Z..</td><td class="p-2">Gerakan bebas di udara tanpa memotong material.</td></tr>
+                        <tr><td class="p-2 font-mono font-bold text-emerald-600">G01</td><td class="p-2 font-bold">Pemotongan Lurus (Linear)</td><td class="p-2 font-mono text-slate-800">G01 X.. Y.. Z.. F..</td><td class="p-2">Gerak pemakanan lurus dengan kecepatan feedrate F (mm/min).</td></tr>
+                        <tr><td class="p-2 font-mono font-bold text-sky-600">G02</td><td class="p-2 font-bold">Busur CW (Searah Jam)</td><td class="p-2 font-mono text-slate-800">G02 X.. Y.. R.. / I.. J..</td><td class="p-2">Interpolasi melingkar searah jarum jam pada bidang XY.</td></tr>
+                        <tr><td class="p-2 font-mono font-bold text-amber-600">G03</td><td class="p-2 font-bold">Busur CCW (Lawan Jam)</td><td class="p-2 font-mono text-slate-800">G03 X.. Y.. R.. / I.. J..</td><td class="p-2">Interpolasi melingkar berlawanan jarum jam pada bidang XY.</td></tr>
+                        <tr><td class="p-2 font-mono font-bold text-emerald-600">G17</td><td class="p-2 font-bold">Bidang Kerja XY</td><td class="p-2 font-mono text-slate-800">G17</td><td class="p-2">Menetapkan bidang kerja interpolasi utama pada sumbu X dan Y.</td></tr>
+                        <tr><td class="p-2 font-mono font-bold text-indigo-600">G90</td><td class="p-2 font-bold">Koordinat Absolut</td><td class="p-2 font-mono text-slate-800">G90</td><td class="p-2">Semua titik dihitung dari titik nol benda kerja (X0, Y0, Z0).</td></tr>
+                        <tr><td class="p-2 font-mono font-bold text-indigo-600">G91</td><td class="p-2 font-bold">Koordinat Inkremental</td><td class="p-2 font-mono text-slate-800">G91</td><td class="p-2">Jarak dihitung relatif dari posisi pisau frais saat ini.</td></tr>
+                        <tr><td class="p-2 font-mono font-bold text-purple-600">G54</td><td class="p-2 font-bold">Titik Nol Benda Kerja 1</td><td class="p-2 font-mono text-slate-800">G54</td><td class="p-2">Sistem koordinat benda kerja (Work Coordinate System 1).</td></tr>
+                        <tr><td class="p-2 font-mono font-bold text-purple-600">G81</td><td class="p-2 font-bold">Siklus Pengeboran</td><td class="p-2 font-mono text-slate-800">G81 X.. Y.. Z.. R.. F..</td><td class="p-2">Siklus bor langsung tembus ke kedalaman Z dan kembali ke R.</td></tr>
+                        <tr><td class="p-2 font-mono font-bold text-purple-600">G83</td><td class="p-2 font-bold">Peck Drilling (Bor Bertahap)</td><td class="p-2 font-mono text-slate-800">G83 X.. Y.. Z.. Q.. R.. F..</td><td class="p-2">Siklus bor lubang dalam dengan pembuangan tatal bertahap Q mm.</td></tr>
+                        <tr><td class="p-2 font-mono font-bold text-purple-600">G80</td><td class="p-2 font-bold">Batalkan Siklus Bor</td><td class="p-2 font-mono text-slate-800">G80</td><td class="p-2">Membatalkan siklus pengeboran aktif (G81/G83).</td></tr>
+                        <tr><td class="p-2 font-mono font-bold text-amber-600">M03</td><td class="p-2 font-bold">Spindle CW ON</td><td class="p-2 font-mono text-slate-800">M03 S..</td><td class="p-2">Menghidupkan putaran spindel searah jarum jam pada S RPM.</td></tr>
+                        <tr><td class="p-2 font-mono font-bold text-amber-600">M05</td><td class="p-2 font-bold">Spindle Stop</td><td class="p-2 font-mono text-slate-800">M05</td><td class="p-2">Menghentikan putaran motor spindel frais.</td></tr>
+                        <tr><td class="p-2 font-mono font-bold text-blue-600">M06</td><td class="p-2 font-bold">Ganti Alat Potong (Tool)</td><td class="p-2 font-mono text-slate-800">T.. M06</td><td class="p-2">Pergantian pisau frais otomatis ke nomor tool yang dipilih.</td></tr>
+                        <tr><td class="p-2 font-mono font-bold text-cyan-600">M08</td><td class="p-2 font-bold">Coolant ON</td><td class="p-2 font-mono text-slate-800">M08</td><td class="p-2">Menyalakan semprotan cairan pendingin pemotongan.</td></tr>
+                        <tr><td class="p-2 font-mono font-bold text-rose-600">M30</td><td class="p-2 font-bold">Program End</td><td class="p-2 font-mono text-slate-800">M30</td><td class="p-2">Program selesai dan kembali ke baris awal (rewind).</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/three.min.js"></script>
+    <script src="js/OrbitControls.js"></script>
+    <script src="js/cad-3d-viewer.js"></script>
+    <script src="js/gcode-parser.js"></script>
+    <script src="js/cnc-validator.js"></script>
+    <script src="js/canvas-visualizer.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
