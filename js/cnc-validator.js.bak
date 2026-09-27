@@ -46,8 +46,6 @@ class CNCMillingValidator {
         let hasM30 = false;
         let hasSpindleStart = false;
         let hasFeedSet = false;
-        let activeCompMode = 'G40';
-        let activeCompLine = 0;
 
         blocks.forEach((block) => {
             if (block.isEmpty) return;
@@ -124,38 +122,6 @@ class CNCMillingValidator {
                     hint: 'Bahaya menabrak alas ragum penjepit (vice) atau meja kerja mesin frais! Periksa kembali kedalaman potong.'
                 });
             }
-            // Cutter Radius Compensation (G40, G41, G42) Checks
-            if (tokens['G']) {
-                const gList = tokens['G'];
-                if (gList.includes(41)) {
-                    if (activeCompMode === 'G40' && (gList.includes(2) || gList.includes(3))) {
-                        technicalWarnings.push({
-                            lineNum: lineNum,
-                            type: 'WARNING',
-                            category: 'KOMPENSASI RADIUS (G41/G42)',
-                            message: 'Baris ' + lineNum + ': Pengaktifan kompensasi radius kiri (G41) pada gerak melingkar (G02/G03).',
-                            hint: 'Standar ISO/Fanuc menganjurkan aktivasi kompensasi radius (lead-in) dilakukan pada gerak lurus G00 atau G01 sebelum menyentuh kontur kurva.'
-                        });
-                    }
-                    activeCompMode = 'G41';
-                    activeCompLine = lineNum;
-                } else if (gList.includes(42)) {
-                    if (activeCompMode === 'G40' && (gList.includes(2) || gList.includes(3))) {
-                        technicalWarnings.push({
-                            lineNum: lineNum,
-                            type: 'WARNING',
-                            category: 'KOMPENSASI RADIUS (G41/G42)',
-                            message: 'Baris ' + lineNum + ': Pengaktifan kompensasi radius kanan (G42) pada gerak melingkar (G02/G03).',
-                            hint: 'Standar ISO/Fanuc menganjurkan aktivasi kompensasi radius (lead-in) dilakukan pada gerak lurus G00 atau G01 sebelum menyentuh kontur kurva.'
-                        });
-                    }
-                    activeCompMode = 'G42';
-                    activeCompLine = lineNum;
-                } else if (gList.includes(40)) {
-                    activeCompMode = 'G40';
-                    activeCompLine = 0;
-                }
-            }
         });
 
         // Crash Warning: Rapid traverse (G00) plunging into raw stock material
@@ -200,17 +166,6 @@ class CNCMillingValidator {
                 category: 'PARAMETER TEKNIS',
                 message: 'Spindle belum dinyalakan dengan perintah M03 / M04 sebelum pemotongan.',
                 hint: 'Sertakan perintah kecepatan putar (contoh: S1500 M03) di awal program frais.'
-            });
-        }
-
-        // Check for uncancelled cutter compensation G41/G42 before program end
-        if (activeCompMode !== 'G40') {
-            technicalWarnings.push({
-                lineNum: activeCompLine || (blocks.length > 0 ? blocks[blocks.length - 1].lineNum : 1),
-                type: 'WARNING',
-                category: 'KOMPENSASI RADIUS (G41/G42)',
-                message: 'Kompensasi radius pisau (' + activeCompMode + ') belum dibatalkan dengan G40 sebelum program berakhir.',
-                hint: 'Biasakan membatalkan kompensasi radius pisau dengan perintah G40 pada gerak menjauh benda kerja (lead-out) sebelum program selesai (M30).'
             });
         }
 

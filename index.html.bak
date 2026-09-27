@@ -103,9 +103,6 @@
                     </label>
                 </div>
                 <div class="flex items-center gap-1.5 flex-wrap">
-                    <select id="presetProgramSelect" class="px-2 py-1 rounded-xl text-[11px] font-bold bg-white text-slate-700 border border-[#CFE0F5] hover:border-blue-400 shadow-xs cursor-pointer focus:outline-none max-w-[210px] truncate" title="Pilih program contoh pembelajaran CNC">
-                        <option value="">-- Contoh Program --</option>
-                    </select>
                     <button id="btnNewProgram" class="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-300 flex items-center gap-1 transition shadow-xs" title="Mulai lembar kerja program manual baru">
                         <i data-lucide="plus" class="w-3.5 h-3.5 text-emerald-600"></i>
                         <span>Program Baru</span>
@@ -472,10 +469,6 @@
                         <span class="text-slate-600 font-sans font-bold">Pisau:</span>
                         <span id="hudTool" class="font-bold text-amber-700 bg-white px-2 py-0.5 rounded-lg border border-[#DCE7F5]">Ø 10</span>
                     </div>
-                    <div class="flex items-center gap-1">
-                        <span class="text-slate-600 font-sans font-bold">Komp:</span>
-                        <span id="hudComp" class="font-bold text-slate-700 bg-white px-2 py-0.5 rounded-lg border border-[#DCE7F5]" title="Status Kompensasi Radius Pisau (G40: Batal, G41: Kiri/Climb, G42: Kanan/Conv)">G40</span>
-                    </div>
                     <span id="hudLine" class="hidden">N1</span>
                     <span id="hudTime" class="hidden">0s</span>
                 </div>
@@ -676,9 +669,6 @@
                         <tr><td class="p-2 font-mono font-bold text-sky-600">G02</td><td class="p-2 font-bold">Busur CW (Searah Jam)</td><td class="p-2 font-mono text-slate-800">G02 X.. Y.. R.. / I.. J..</td><td class="p-2">Interpolasi melingkar searah jarum jam pada bidang XY.</td></tr>
                         <tr><td class="p-2 font-mono font-bold text-amber-600">G03</td><td class="p-2 font-bold">Busur CCW (Lawan Jam)</td><td class="p-2 font-mono text-slate-800">G03 X.. Y.. R.. / I.. J..</td><td class="p-2">Interpolasi melingkar berlawanan jarum jam pada bidang XY.</td></tr>
                         <tr><td class="p-2 font-mono font-bold text-emerald-600">G17</td><td class="p-2 font-bold">Bidang Kerja XY</td><td class="p-2 font-mono text-slate-800">G17</td><td class="p-2">Menetapkan bidang kerja interpolasi utama pada sumbu X dan Y.</td></tr>
-                        <tr><td class="p-2 font-mono font-bold text-blue-600">G40</td><td class="p-2 font-bold">Batal Kompensasi Radius</td><td class="p-2 font-mono text-slate-800">G40</td><td class="p-2">Membatalkan kompensasi radius pisau; posisi pahat kembali ke titik tengah (centerline).</td></tr>
-                        <tr><td class="p-2 font-mono font-bold text-blue-600">G41</td><td class="p-2 font-bold">Kompensasi Radius Kiri</td><td class="p-2 font-mono text-slate-800">G41 D.. / G41</td><td class="p-2">Pisau bergeser ke kiri arah gerak sebesar radius cutter (Climb Milling pada kontur luar).</td></tr>
-                        <tr><td class="p-2 font-mono font-bold text-blue-600">G42</td><td class="p-2 font-bold">Kompensasi Radius Kanan</td><td class="p-2 font-mono text-slate-800">G42 D.. / G42</td><td class="p-2">Pisau bergeser ke kanan arah gerak sebesar radius cutter (Conventional Milling).</td></tr>
                         <tr><td class="p-2 font-mono font-bold text-indigo-600">G90</td><td class="p-2 font-bold">Koordinat Absolut</td><td class="p-2 font-mono text-slate-800">G90</td><td class="p-2">Semua titik dihitung dari titik nol benda kerja (X0, Y0, Z0).</td></tr>
                         <tr><td class="p-2 font-mono font-bold text-indigo-600">G91</td><td class="p-2 font-bold">Koordinat Inkremental</td><td class="p-2 font-mono text-slate-800">G91</td><td class="p-2">Jarak dihitung relatif dari posisi pisau frais saat ini.</td></tr>
                         <tr><td class="p-2 font-mono font-bold text-purple-600">G54</td><td class="p-2 font-bold">Titik Nol Benda Kerja 1</td><td class="p-2 font-mono text-slate-800">G54</td><td class="p-2">Sistem koordinat benda kerja (Work Coordinate System 1).</td></tr>
@@ -700,7 +690,6 @@
     <script src="js/three.min.js"></script>
     <script src="js/OrbitControls.js"></script>
     <script src="js/cad-3d-viewer.js"></script>
-    <script src="js/presets.js"></script>
     <script src="js/gcode-parser.js"></script>
     <script src="js/cnc-validator.js"></script>
     <script src="js/canvas-visualizer.js"></script>

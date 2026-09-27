@@ -449,6 +449,47 @@ G28 G91 Z0
 M05
 M30
 %`
+    },
+    {
+        id: 'preset-12',
+        title: '12. Kompensasi Radius Pahat (G41 Climb Milling Kontur Luar Balok)',
+        category: 'Kompensasi Radius (G40, G41, G42)',
+        difficulty: 'Menengah',
+        description: 'Demonstrasi pemotongan kontur balok 60x40 mm menggunakan kompensasi radius pisau kiri (G41 D1 / Climb Milling) dengan pisau Endmill D10 (R=5 mm). Perhatikan garis kontur program (biru) vs lintasan pusat pahat terkompensasi (hijau).',
+        learningObjective: 'Memahami fungsi G41 (geser kiri sebesar radius R=5mm), gerakan masuk (lead-in), lintasan pemotongan sejajar kontur, dan pembatalan kompensasi aman (G40 lead-out).',
+        stock: { lengthX: 100, widthY: 80, heightZ: 25, toolDiameter: 10, wcsMode: 'bottom-left' },
+        code: `%
+O0012 (KOMPENSASI RADIUS G41 KONTUR BALOK)
+G21 G90 G17 G40 G80
+G28 G91 Z0
+G90 G54
+T01 M06 (ENDMILL D10)
+S1600 M03
+
+(1. POSISI PENDEKATAN DI LUAR BAHAN)
+G00 X90 Y10 Z5
+
+(2. TURUN KE KEDALAMAN POTONG Z-2.0)
+G01 Z-2.0 F120
+
+(3. LEAD-IN: AKTIFKAN KOMPENSASI KIRI G41 MENUJU TITIK AWAL KONTUR X80 Y20)
+G41 D1 G01 X80 Y20 F250
+
+(4. PEMOTONGAN KONTUR SEJAJAR BALOK 60X40 MM - CLIMB MILLING CW)
+G01 X20 Y20 (SISI DEPAN: X80 KE X20)
+G01 X20 Y60 (SISI KIRI: Y20 KE Y60)
+G01 X80 Y60 (SISI BELAKANG: X20 KE X80)
+G01 X80 Y20 (SISI KANAN: Y60 KE Y20 MENUTUP KONTUR)
+
+(5. LEAD-OUT: KELUAR MENJAUHI BENDA KERJA & BATALKAN KOMPENSASI G40)
+G40 G01 X90 Y10 F300
+
+(6. ANGKAT PAHAT KE JARAK AMAN & SELESAI)
+G00 Z10
+G28 G91 Z0
+M05
+M30
+%`
     }
 ];
 

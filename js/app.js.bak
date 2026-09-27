@@ -95,7 +95,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const hudLine = document.getElementById('hudLine');
     const hudTime = document.getElementById('hudTime');
     const hudTool = document.getElementById('hudTool');
-    const hudComp = document.getElementById('hudComp');
     const diagnosticsList = document.getElementById('diagnosticsList');
     const errorCountBadge = document.getElementById('errorCountBadge');
     const warningCountBadge = document.getElementById('warningCountBadge');
@@ -525,9 +524,6 @@ M30
     }
 
     function processGCode(options = {}) {
-        if (visualizer && visualizer.options) {
-            parser.options.defaultToolD = visualizer.options.toolDiameter || 10;
-        }
         const code = codeTextarea.value;
         currentParsedData = parser.parse(code);
         
@@ -599,13 +595,7 @@ M30
         tr.dataset.linenum = lineNum;
         tr.className = 'hover:bg-blue-50/70 transition group';
 
-        const gCodes = (b.tokens && b.tokens['G']) ? b.tokens['G'] : [];
-        let motionMode = b.motionMode || 'G01';
-        if (gCodes.includes(41)) motionMode = 'G41';
-        else if (gCodes.includes(42)) motionMode = 'G42';
-        else if (gCodes.includes(40) && b.clean && b.clean.includes('G40')) motionMode = 'G40';
-        else if (b.cutterComp && b.cutterComp !== 'G40') motionMode = b.cutterComp;
-
+        const motionMode = b.motionMode || 'G01';
         const xVal = (b.tokens && b.tokens['X'] !== undefined) ? b.tokens['X'][0] : (b.hasMotion && b.endPoint ? parseFloat(b.endPoint.x.toFixed(2)) : '');
         const yVal = (b.tokens && b.tokens['Y'] !== undefined) ? b.tokens['Y'][0] : (b.hasMotion && b.endPoint ? parseFloat(b.endPoint.y.toFixed(2)) : '');
         const zVal = (b.tokens && b.tokens['Z'] !== undefined) ? b.tokens['Z'][0] : (b.hasMotion && b.endPoint ? parseFloat(b.endPoint.z.toFixed(2)) : '');
@@ -625,9 +615,6 @@ M30
                     <option value="G01" ${motionMode === 'G01' ? 'selected' : ''} class="text-emerald-700 font-bold">G01 (Potong)</option>
                     <option value="G02" ${motionMode === 'G02' ? 'selected' : ''} class="text-sky-700 font-bold">G02 (Busur CW)</option>
                     <option value="G03" ${motionMode === 'G03' ? 'selected' : ''} class="text-amber-700 font-bold">G03 (Busur CCW)</option>
-                    <option value="G41" ${motionMode === 'G41' ? 'selected' : ''} class="text-blue-700 font-bold">G41 (Komp. Kiri / Climb)</option>
-                    <option value="G42" ${motionMode === 'G42' ? 'selected' : ''} class="text-amber-700 font-bold">G42 (Komp. Kanan / Conv)</option>
-                    <option value="G40" ${motionMode === 'G40' ? 'selected' : ''} class="text-slate-700 font-bold">G40 (Batal Kompensasi)</option>
                     <option value="G81" ${motionMode === 'G81' ? 'selected' : ''} class="text-purple-700 font-bold">G81 (Bor)</option>
                     <option value="G83" ${motionMode === 'G83' ? 'selected' : ''} class="text-indigo-700 font-bold">G83 (Peck)</option>
                 </select>
@@ -795,16 +782,7 @@ M30
 
                 if (!gSelect) return;
                 const g = gSelect.value || 'G01';
-                let parts = [];
-                if (g === 'G41') {
-                    parts = ['G41', 'D1', 'G01'];
-                } else if (g === 'G42') {
-                    parts = ['G42', 'D1', 'G01'];
-                } else if (g === 'G40') {
-                    parts = ['G40'];
-                } else {
-                    parts = [g];
-                }
+                const parts = [g];
 
                 const xStr = xInput ? xInput.value.trim() : '';
                 const yStr = yInput ? yInput.value.trim() : '';
@@ -818,7 +796,7 @@ M30
                 if (rStr !== '' && !isNaN(parseFloat(rStr))) parts.push('R' + parseFloat(rStr));
                 if (fStr !== '' && !isNaN(parseFloat(fStr))) parts.push('F' + parseFloat(fStr));
 
-                if (parts.length > 1 || g === 'G40') {
+                if (parts.length > 1) {
                     motionCommands.push(parts.join(' '));
                 }
             });
@@ -843,7 +821,7 @@ M30
                 if (foundFooter) {
                     footerLines.push(line);
                 } else if (!foundFirstMotion) {
-                    if (/(?:^|\s)(?:G0?0|G0?1|G0?2|G0?3|G40|G41|G42|G81|G83)\b/.test(clean) && (/(?:X|Y|Z)/.test(clean) || /(?:G40|G41|G42)/.test(clean))) {
+                    if (/(?:^|\s)(?:G0?0|G0?1|G0?2|G0?3|G81|G83)\b/.test(clean) && /(?:X|Y|Z)/.test(clean)) {
                         foundFirstMotion = true;
                     } else {
                         headerLines.push(line);
@@ -1131,29 +1109,7 @@ M30
             };
         }
 
-        // Standalone Cutter Compensation (G41 Climb / G42 Conventional / G40 Batal)
-        if (gCodes.includes(41)) {
-            const dVal = tokens['D'] ? ` D${tokens['D'][0]}` : '';
-            return {
-                text: `Aktivasi Kompensasi Radius Kiri / Climb Milling (G41${dVal}) — Pahat bergeser ke kiri sebesar radius cutter (R = D/2)`,
-                color: 'text-blue-700 font-bold'
-            };
-        }
-        if (gCodes.includes(42)) {
-            const dVal = tokens['D'] ? ` D${tokens['D'][0]}` : '';
-            return {
-                text: `Aktivasi Kompensasi Radius Kanan / Conventional Milling (G42${dVal}) — Pahat bergeser ke kanan sebesar radius cutter (R = D/2)`,
-                color: 'text-amber-700 font-bold'
-            };
-        }
-        if (gCodes.includes(40) && !gCodes.includes(21) && !gCodes.includes(90) && !gCodes.includes(17)) {
-            return {
-                text: 'Pembatalan Kompensasi Radius Pahat (G40 Cancel Offset) — Posisi pisau kembali ke titik tengah (centerline)',
-                color: 'text-slate-700 font-semibold'
-            };
-        }
-
-        // G-Codes Inisialisasi Standar Mesin
+        // G-Codes Inisialisasi
         const prepList = [];
         if (gCodes.includes(21)) prepList.push('Satuan mm (G21)');
         if (gCodes.includes(90)) prepList.push('Absolut (G90)');
@@ -1396,20 +1352,16 @@ M30
         const targetY = seg.end.y.toFixed(1);
         const targetZ = seg.end.z.toFixed(1);
 
-        let compTag = '';
-        if (seg.cutterComp === 'G41') compTag = ' (Kompensasi Kiri G41)';
-        else if (seg.cutterComp === 'G42') compTag = ' (Kompensasi Kanan G42)';
-
         if (seg.type === 'G00') {
-            return `Gerak cepat tanpa pemakanan ke X ${targetX}, Y ${targetY}, Z ${targetZ} mm${compTag}.`;
+            return `Gerak cepat tanpa pemakanan ke X ${targetX}, Y ${targetY}, Z ${targetZ} mm.`;
         } else if (seg.type === 'G01') {
-            return `Pemotongan frais lurus ke X ${targetX}, Y ${targetY}, kedalaman Z ${targetZ} mm${compTag}.`;
+            return `Pemotongan frais lurus ke X ${targetX}, Y ${targetY}, kedalaman Z ${targetZ} mm.`;
         } else if (seg.type === 'G02') {
             const r = seg.radius ? seg.radius.toFixed(1) : '-';
-            return `Interpolasi melingkar CW searah jarum jam (R ${r}) ke X ${targetX}, Y ${targetY}, Z ${targetZ} mm${compTag}.`;
+            return `Interpolasi melingkar CW searah jarum jam (R ${r}) ke X ${targetX}, Y ${targetY}, Z ${targetZ} mm.`;
         } else if (seg.type === 'G03') {
             const r = seg.radius ? seg.radius.toFixed(1) : '-';
-            return `Interpolasi melingkar CCW lawan jarum jam (R ${r}) ke X ${targetX}, Y ${targetY}, Z ${targetZ} mm${compTag}.`;
+            return `Interpolasi melingkar CCW lawan jarum jam (R ${r}) ke X ${targetX}, Y ${targetY}, Z ${targetZ} mm.`;
         } else if (seg.type === 'G81') {
             return `Siklus pengeboran langsung ke X ${targetX}, Y ${targetY}, kedalaman lubang Z ${targetZ} mm.`;
         } else if (seg.type === 'G83') {
@@ -1429,17 +1381,6 @@ M30
         if (hudMotion) hudMotion.textContent = seg ? seg.type : (currentParsedData && currentParsedData.blocks[0] ? currentParsedData.blocks[0].motionMode : 'G00');
         if (hudFeed) hudFeed.textContent = 'F ' + (seg && seg.feed ? seg.feed.toFixed(0) : '150');
         if (hudTool) hudTool.textContent = 'Ø ' + visualizer.options.toolDiameter;
-        if (hudComp) {
-            const comp = seg ? (seg.cutterComp || 'G40') : (currentParsedData && currentParsedData.blocks[0] ? (currentParsedData.blocks[0].cutterComp || 'G40') : 'G40');
-            hudComp.textContent = comp;
-            if (comp === 'G41') {
-                hudComp.className = 'font-black text-blue-700 bg-blue-100 px-2 py-0.5 rounded-lg border border-blue-300 shadow-2xs';
-            } else if (comp === 'G42') {
-                hudComp.className = 'font-black text-amber-700 bg-amber-100 px-2 py-0.5 rounded-lg border border-amber-300 shadow-2xs';
-            } else {
-                hudComp.className = 'font-bold text-slate-700 bg-white px-2 py-0.5 rounded-lg border border-[#DCE7F5]';
-            }
-        }
         if (hudLine) hudLine.textContent = 'N' + (lineNum || (seg ? seg.lineNum : 1));
         if (hudTime && currentParsedData) hudTime.textContent = ((currentParsedData.stats && currentParsedData.stats.estimatedTimeSec) ? currentParsedData.stats.estimatedTimeSec : 0) + 's';
 

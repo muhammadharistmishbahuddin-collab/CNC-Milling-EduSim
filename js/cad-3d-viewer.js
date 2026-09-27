@@ -1355,6 +1355,11 @@ class MillingCAD3DViewer {
                     const chainEnd = chainPts[chainPts.length - 1];
                     const chainStart = chainPts[0];
 
+                    // If chain is already closed, stop extending
+                    if (chainPts.length >= 3 && distSq(chainStart, chainEnd) < CONNECT_TOL_SQ) {
+                        break;
+                    }
+
                     for (let i = 0; i < pool.length; i++) {
                         const cand = pool[i];
                         const candStart = cand.points[0];
@@ -1547,6 +1552,51 @@ class MillingCAD3DViewer {
 
         if (!segments || segments.length === 0) return;
 
+        // 1. Pass 1: Workpiece Nominal Contour (Programmed Path) jika kompensasi G41/G42 aktif
+        const hasCompensation = segments.some(s => s.cutterComp === 'G41' || s.cutterComp === 'G42');
+        if (hasCompensation) {
+            segments.forEach(seg => {
+                if (!seg.progStart || !seg.progEnd || seg.type === 'G00') return;
+                const p1 = new THREE.Vector3(seg.progStart.x, seg.progStart.y, (seg.progStart.z || 0) + 0.1);
+                const p2 = new THREE.Vector3(seg.progEnd.x, seg.progEnd.y, (seg.progEnd.z || 0) + 0.1);
+                const geom = new THREE.BufferGeometry().setFromPoints([p1, p2]);
+                const mat = new THREE.LineDashedMaterial({
+                    color: 0x2563eb,
+                    dashSize: 2,
+                    gapSize: 1.5,
+                    linewidth: 2
+                });
+                const line = new THREE.Line(geom, mat);
+                line.computeLineDistances();
+                this.toolpathGroup.add(line);
+
+                // Connector lines
+                if ((seg.cutterComp === 'G41' || seg.cutterComp === 'G42') && seg.distance > 6) {
+                    const midProg = new THREE.Vector3(
+                        (seg.progStart.x + seg.progEnd.x) / 2,
+                        (seg.progStart.y + seg.progEnd.y) / 2,
+                        ((seg.progStart.z || 0) + (seg.progEnd.z || 0)) / 2 + 0.1
+                    );
+                    const midTool = new THREE.Vector3(
+                        (seg.start.x + seg.end.x) / 2,
+                        (seg.start.y + seg.end.y) / 2,
+                        (seg.start.z + seg.end.z) / 2 + 0.1
+                    );
+                    const connGeom = new THREE.BufferGeometry().setFromPoints([midProg, midTool]);
+                    const connMat = new THREE.LineDashedMaterial({
+                        color: (seg.cutterComp === 'G41') ? 0x0ea5e9 : 0xf59e0b,
+                        dashSize: 1,
+                        gapSize: 1,
+                        linewidth: 1
+                    });
+                    const connLine = new THREE.Line(connGeom, connMat);
+                    connLine.computeLineDistances();
+                    this.toolpathGroup.add(connLine);
+                }
+            });
+        }
+
+        // 2. Pass 2: Toolpath Centerline
         segments.forEach(seg => {
             let color = 0x10b981; // emerald (G01)
             if (seg.type === 'G00') color = 0xf43f5e; // rose/red

@@ -816,6 +816,49 @@ class MillingVisualizer {
         if (!this.segments || this.segments.length === 0) return;
 
         ctx.save();
+
+        // 1. PASS 1 (EDUKATIF G41/G42): Tampilkan garis kontur nominal benda kerja (Programmed Path) jika kompensasi radius aktif
+        const hasCompensation = this.segments.some(s => s.cutterComp === 'G41' || s.cutterComp === 'G42');
+        if (hasCompensation) {
+            ctx.save();
+            ctx.strokeStyle = 'rgba(37, 99, 235, 0.9)'; // Biru kontur gambar kerja (Workpiece Nominal Contour)
+            ctx.lineWidth = 1.6;
+            ctx.setLineDash([4, 3]);
+
+            this.segments.forEach((seg) => {
+                if (!seg.progStart || !seg.progEnd || seg.type === 'G00') return;
+                const p1 = this.worldToScreen2D(seg.progStart.x, seg.progStart.y);
+                const p2 = this.worldToScreen2D(seg.progEnd.x, seg.progEnd.y);
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.stroke();
+
+                // Gambar garis konektor offset radius (R) yang menghubungkan titik kontur dengan pusat cutter
+                if ((seg.cutterComp === 'G41' || seg.cutterComp === 'G42') && seg.distance > 8) {
+                    const midProgX = (seg.progStart.x + seg.progEnd.x) / 2;
+                    const midProgY = (seg.progStart.y + seg.progEnd.y) / 2;
+                    const midToolX = (seg.start.x + seg.end.x) / 2;
+                    const midToolY = (seg.start.y + seg.end.y) / 2;
+
+                    const scProg = this.worldToScreen2D(midProgX, midProgY);
+                    const scTool = this.worldToScreen2D(midToolX, midToolY);
+
+                    ctx.save();
+                    ctx.setLineDash([2, 2]);
+                    ctx.strokeStyle = (seg.cutterComp === 'G41') ? 'rgba(14, 165, 233, 0.85)' : 'rgba(245, 158, 11, 0.85)';
+                    ctx.lineWidth = 1.2;
+                    ctx.beginPath();
+                    ctx.moveTo(scProg.x, scProg.y);
+                    ctx.lineTo(scTool.x, scTool.y);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            });
+            ctx.restore();
+        }
+
+        // 2. PASS 2: Gambar lintasan tengah pahat terkompensasi (Toolpath Centerline)
         this.segments.forEach((seg) => {
             ctx.lineWidth = 1.8;
 
@@ -862,6 +905,35 @@ class MillingVisualizer {
                 this.drawArrowHead(ctx, midX, midY, angle, seg.type === 'G00' ? '#ef4444' : '#10b981');
             }
         });
+
+        // 3. Legend Badge untuk G41/G42 di pojok visualizer
+        if (hasCompensation && this.options.viewMode === '2d') {
+            const anyG41 = this.segments.some(s => s.cutterComp === 'G41');
+            const compLabel = anyG41 ? 'G41 (Kiri/Climb)' : 'G42 (Kanan/Conv)';
+            const rVal = (this.options.toolDiameter / 2).toFixed(1);
+
+            ctx.save();
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 1;
+            const bX = 14, bY = 46, bW = 230, bH = 46;
+            ctx.beginPath();
+            if (ctx.roundRect) {
+                ctx.roundRect(bX, bY, bW, bH, 8);
+            } else {
+                ctx.rect(bX, bY, bW, bH);
+            }
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.font = 'bold 10px monospace';
+            ctx.fillStyle = '#60a5fa';
+            ctx.fillText(`┄┄ Kontur Program (Nominal)`, bX + 10, bY + 18);
+
+            ctx.fillStyle = '#34d399';
+            ctx.fillText(`── Pusat Pahat (${compLabel}, R=${rVal})`, bX + 10, bY + 34);
+            ctx.restore();
+        }
 
         ctx.setLineDash([]);
         ctx.restore();
@@ -1681,6 +1753,51 @@ class MillingVisualizer {
         if (!this.segments || this.segments.length === 0) return;
 
         ctx.save();
+
+        // 1. PASS 1 (EDUKATIF G41/G42): Tampilkan garis kontur nominal benda kerja (Programmed Path) dalam 3D Isometrik
+        const hasCompensation = this.segments.some(s => s.cutterComp === 'G41' || s.cutterComp === 'G42');
+        if (hasCompensation) {
+            ctx.save();
+            ctx.strokeStyle = 'rgba(37, 99, 235, 0.9)'; // Biru kontur gambar kerja (Workpiece Nominal Contour)
+            ctx.lineWidth = 1.8;
+            ctx.setLineDash([4, 3]);
+
+            this.segments.forEach((seg) => {
+                if (!seg.progStart || !seg.progEnd || seg.type === 'G00') return;
+                const p1 = this.worldToScreenIso(seg.progStart.x, seg.progStart.y, seg.progStart.z);
+                const p2 = this.worldToScreenIso(seg.progEnd.x, seg.progEnd.y, seg.progEnd.z);
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.stroke();
+
+                // Gambar garis konektor offset radius (R) yang menghubungkan titik kontur dengan pusat cutter dalam 3D
+                if ((seg.cutterComp === 'G41' || seg.cutterComp === 'G42') && seg.distance > 6) {
+                    const midProgX = (seg.progStart.x + seg.progEnd.x) / 2;
+                    const midProgY = (seg.progStart.y + seg.progEnd.y) / 2;
+                    const midProgZ = (seg.progStart.z + seg.progEnd.z) / 2;
+                    const midToolX = (seg.start.x + seg.end.x) / 2;
+                    const midToolY = (seg.start.y + seg.end.y) / 2;
+                    const midToolZ = (seg.start.z + seg.end.z) / 2;
+
+                    const scProg = this.worldToScreenIso(midProgX, midProgY, midProgZ);
+                    const scTool = this.worldToScreenIso(midToolX, midToolY, midToolZ);
+
+                    ctx.save();
+                    ctx.setLineDash([2, 2]);
+                    ctx.strokeStyle = (seg.cutterComp === 'G41') ? 'rgba(14, 165, 233, 0.85)' : 'rgba(245, 158, 11, 0.85)';
+                    ctx.lineWidth = 1.2;
+                    ctx.beginPath();
+                    ctx.moveTo(scProg.x, scProg.y);
+                    ctx.lineTo(scTool.x, scTool.y);
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            });
+            ctx.restore();
+        }
+
+        // 2. PASS 2: Gambar lintasan tengah pahat terkompensasi (Toolpath Centerline) dalam 3D
         this.segments.forEach((seg) => {
             ctx.lineWidth = 1.8;
 
@@ -1719,6 +1836,35 @@ class MillingVisualizer {
                 ctx.stroke();
             }
         });
+
+        // 3. Legend Badge untuk G41/G42 di pojok visualizer 3D
+        if (hasCompensation) {
+            const anyG41 = this.segments.some(s => s.cutterComp === 'G41');
+            const compLabel = anyG41 ? 'G41 (Kiri/Climb)' : 'G42 (Kanan/Conv)';
+            const rVal = (this.options.toolDiameter / 2).toFixed(1);
+
+            ctx.save();
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.88)';
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 1;
+            const bX = 14, bY = 46, bW = 230, bH = 46;
+            ctx.beginPath();
+            if (ctx.roundRect) {
+                ctx.roundRect(bX, bY, bW, bH, 8);
+            } else {
+                ctx.rect(bX, bY, bW, bH);
+            }
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.font = 'bold 10px monospace';
+            ctx.fillStyle = '#60a5fa';
+            ctx.fillText(`┄┄ Kontur Program (Nominal)`, bX + 10, bY + 18);
+
+            ctx.fillStyle = '#34d399';
+            ctx.fillText(`── Pusat Pahat (${compLabel}, R=${rVal})`, bX + 10, bY + 34);
+            ctx.restore();
+        }
 
         ctx.setLineDash([]);
         ctx.restore();
@@ -1871,8 +2017,21 @@ class MillingVisualizer {
             // Cutting tip glow
             ctx.fillStyle = isCutting ? '#10b981' : '#f59e0b';
             ctx.beginPath();
-            ctx.arc(pos.x, pos.y, 4, 0, Math.PI * 2);
+            // 3D Isometric Tool Contact Disk at cutting plane
+            const rWorld = (this.options.toolDiameter / 2);
+            ctx.beginPath();
+            const numPts = 24;
+            for (let c = 0; c <= numPts; c++) {
+                const ang = (c / numPts) * Math.PI * 2;
+                const p = this.worldToScreenIso(this.toolPos.x + rWorld * Math.cos(ang), this.toolPos.y + rWorld * Math.sin(ang), this.toolPos.z);
+                if (c === 0) ctx.moveTo(p.x, p.y);
+                else ctx.lineTo(p.x, p.y);
+            }
+            ctx.fillStyle = isCutting ? 'rgba(16, 185, 129, 0.35)' : 'rgba(245, 158, 11, 0.25)';
             ctx.fill();
+            ctx.strokeStyle = isCutting ? '#10b981' : '#f59e0b';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
         } else {
             // In 2D Top View: Draw tool circle with rotating flutes
             if (!isCutting) {
@@ -1926,39 +2085,40 @@ class MillingVisualizer {
             ctx.moveTo(pos.x, pos.y - toolRadius - 6);
             ctx.lineTo(pos.x, pos.y + toolRadius + 6);
             ctx.stroke();
-
-            // Tool HUD Tooltip Box (Two-line matching reference image)
-            const curSeg = (this.segments && this.currentSegmentIndex >= 0) ? this.segments[this.currentSegmentIndex] : null;
-            const modeStr = curSeg ? curSeg.type : (this.toolPos.z <= 0 ? 'G01' : 'G00');
-            const zStatus = isCutting ? `Z ${this.toolPos.z.toFixed(1)} (CUT)` : `Z ${this.toolPos.z.toFixed(1)} (SAFE)`;
-            const line1 = `${modeStr} | ${zStatus}`;
-            const line2 = `G54 (0,0) ${this.getWCSLabel()}`;
-
-            ctx.font = 'bold 9.5px Fira Code, monospace';
-            const w1 = ctx.measureText(line1).width;
-            const w2 = ctx.measureText(line2).width;
-            const boxW = Math.max(w1, w2) + 16;
-            const boxH = 34;
-            const boxX = pos.x + toolRadius + 10;
-            const boxY = pos.y - 12;
-
-            ctx.fillStyle = 'rgba(8, 16, 36, 0.88)';
-            ctx.strokeStyle = '#f59e0b';
-            ctx.lineWidth = 1.2;
-            ctx.beginPath();
-            if (ctx.roundRect) {
-                ctx.roundRect(boxX, boxY, boxW, boxH, 8);
-            } else {
-                ctx.rect(boxX, boxY, boxW, boxH);
-            }
-            ctx.fill();
-            ctx.stroke();
-
-            ctx.fillStyle = '#f59e0b';
-            ctx.fillText(line1, boxX + 8, boxY + 14);
-            ctx.fillStyle = '#fef08a';
-            ctx.fillText(line2, boxX + 8, boxY + 27);
         }
+
+        // Tool HUD Tooltip Box (Two-line matching reference image, shown in both 2D and 3D)
+        const curSeg = (this.segments && this.currentSegmentIndex >= 0) ? this.segments[this.currentSegmentIndex] : null;
+        const modeStr = curSeg ? curSeg.type : (this.toolPos.z <= 0 ? 'G01' : 'G00');
+        const zStatus = isCutting ? `Z ${this.toolPos.z.toFixed(1)} (CUT)` : `Z ${this.toolPos.z.toFixed(1)} (SAFE)`;
+        const compBadge = (curSeg && (curSeg.cutterComp === 'G41' || curSeg.cutterComp === 'G42')) ? ` | ${curSeg.cutterComp}` : '';
+        const line1 = `${modeStr} | ${zStatus}${compBadge}`;
+        const line2 = `G54 (0,0) ${this.getWCSLabel()}`;
+
+        ctx.font = 'bold 9.5px Fira Code, monospace';
+        const w1 = ctx.measureText(line1).width;
+        const w2 = ctx.measureText(line2).width;
+        const boxW = Math.max(w1, w2) + 16;
+        const boxH = 34;
+        const boxX = pos.x + toolRadius + 10;
+        const boxY = pos.y - 12;
+
+        ctx.fillStyle = 'rgba(8, 16, 36, 0.88)';
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        if (ctx.roundRect) {
+            ctx.roundRect(boxX, boxY, boxW, boxH, 8);
+        } else {
+            ctx.rect(boxX, boxY, boxW, boxH);
+        }
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#f59e0b';
+        ctx.fillText(line1, boxX + 8, boxY + 14);
+        ctx.fillStyle = '#fef08a';
+        ctx.fillText(line2, boxX + 8, boxY + 27);
 
         ctx.restore();
     }

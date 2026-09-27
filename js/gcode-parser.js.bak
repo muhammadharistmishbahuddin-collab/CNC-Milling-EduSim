@@ -15,50 +15,6 @@ class MillingGCodeParser {
         }, options);
     }
 
-    calculateLineOffset(p1, p2, radius, compMode) {
-        if (compMode === 'G40' || radius <= 0) {
-            return { x: 0, y: 0 };
-        }
-        const dx = p2.x - p1.x;
-        const dy = p2.y - p1.y;
-        const len = Math.hypot(dx, dy);
-        if (len < 1e-6) {
-            return { x: 0, y: 0 };
-        }
-        const ux = dx / len;
-        const uy = dy / len;
-        if (compMode === 'G41') {
-            // Kompensasi Kiri (Left Normal): 90 derajat berlawanan arah jarum jam (-uy, ux)
-            return { x: -uy * radius, y: ux * radius };
-        } else if (compMode === 'G42') {
-            // Kompensasi Kanan (Right Normal): 90 derajat searah jarum jam (uy, -ux)
-            return { x: uy * radius, y: -ux * radius };
-        }
-        return { x: 0, y: 0 };
-    }
-
-    calculateCornerIntersection(cornerP, u1, o1, u2, o2, maxOffset) {
-        const det = u1.x * u2.y - u1.y * u2.x;
-        if (Math.abs(det) < 1e-4) {
-            // Garis sejajar atau kolinear: gunakan offset normal garis kedua
-            return { x: cornerP.x + o2.x, y: cornerP.y + o2.y };
-        }
-        // Hitung parameter t titik potong garis 1 dan garis 2
-        const cross = (o2.x - o1.x) * u2.y - (o2.y - o1.y) * u2.x;
-        const t = cross / det;
-
-        const intX = cornerP.x + o1.x + t * u1.x;
-        const intY = cornerP.y + o1.y + t * u1.y;
-
-        // Batas keamanan sudut lancip (safety clamping) agar titik potong tidak lari ke tak hingga
-        const dist = Math.hypot(intX - cornerP.x, intY - cornerP.y);
-        const limit = (maxOffset || 10) * 2.8;
-        if (dist > limit) {
-            return { x: cornerP.x + o2.x, y: cornerP.y + o2.y };
-        }
-        return { x: intX, y: intY };
-    }
-
     parse(gcodeText) {
         const lines = gcodeText.split(/\r?\n/);
         const blocks = [];
@@ -79,18 +35,6 @@ class MillingGCodeParser {
         let spindleState = 'M05'; // M03 CW, M04 CCW, M05 Stop
         let coolantState = 'M09'; // M08 On, M09 Off
         let cutterComp = 'G40';   // G40 Off, G41 Left, G42 Right
-        let prevCutterComp = 'G40';
-        let compJustActivated = false;
-        let compJustCancelled = false;
-        let compOffset = { x: 0, y: 0 };
-        let lastDirection = null;
-        let lastCompOffset = null;
-        let firstCompSeg = null;
-        let firstCompDir = null;
-        let firstCompOff = null;
-        let firstCompCorner = null;
-        let leadInSeg = null;
-        let currentD = null;
         let activeCycle = null;   // G81, G83, or null
         let cycleRPlane = 2.0;    // Retract plane for cycles
         let cyclePeckQ = 2.0;     // Peck depth for G83
@@ -152,29 +96,9 @@ class MillingGCodeParser {
             if (gCodes.includes(19)) planeMode = 'G19';
 
             // Cutter Radius Compensation
-            prevCutterComp = cutterComp;
-            if (gCodes.includes(40)) {
-                if (cutterComp !== 'G40') {
-                    compJustCancelled = true;
-                    compJustActivated = false;
-                }
-                cutterComp = 'G40';
-            }
-            if (gCodes.includes(41)) {
-                if (cutterComp !== 'G41') {
-                    compJustActivated = true;
-                    compJustCancelled = false;
-                }
-                cutterComp = 'G41';
-            }
-            if (gCodes.includes(42)) {
-                if (cutterComp !== 'G42') {
-                    compJustActivated = true;
-                    compJustCancelled = false;
-                }
-                cutterComp = 'G42';
-            }
-            if (tokens['D'] !== undefined) currentD = tokens['D'][0];
+            if (gCodes.includes(40)) cutterComp = 'G40';
+            if (gCodes.includes(41)) cutterComp = 'G41';
+            if (gCodes.includes(42)) cutterComp = 'G42';
 
             // Motion Modes
             if (gCodes.includes(0)) { motionMode = 'G00'; activeCycle = null; }
@@ -350,164 +274,7 @@ class MillingGCodeParser {
                     currentY = holeY;
                     currentZ = rZ;
                 } else if (motionMode === 'G00' || motionMode === 'G01') {
-                    const xyDist = Math.hypot(targetX - currentX, targetY - currentY);
-                    const effectiveToolRadius = (detectedToolDiameter && detectedToolDiameter > 0)
-                        ? (detectedToolDiameter / 2)
-                        : ((this.options.defaultToolD || 10) / 2);
-
-                    let toolStartX = currentX;
-                    let toolStartY = currentY;
-                    let toolEndX = targetX;
-                    let toolEndY = targetY;
-                    let segmentPoints = [];
-
-                    if (cutterComp === 'G40') {
-                        // Batal kompensasi (Lead-out atau gerak normal G40)
-                        if (compJustCancelled || prevCutterComp === 'G41' || prevCutterComp === 'G42' || Math.hypot(compOffset.x, compOffset.y) > 1e-4) {
-                            // Lead-out move: mulai dari titik akhir terkompensasi segmen sebelumnya menuju titik uncompensated
-                            toolStartX = currentX + compOffset.x;
-                            toolStartY = currentY + compOffset.y;
-                            if (segments.length > 0) {
-                                const prevSeg = segments[segments.length - 1];
-                                if (prevSeg.cutterComp !== 'G40' && !prevSeg.isHole) {
-                                    toolStartX = prevSeg.end.x;
-                                    toolStartY = prevSeg.end.y;
-                                }
-                            }
-                            toolEndX = targetX;
-                            toolEndY = targetY;
-                            compOffset = { x: 0, y: 0 };
-                            compJustCancelled = false;
-                        } else {
-                            toolStartX = currentX;
-                            toolStartY = currentY;
-                            toolEndX = targetX;
-                            toolEndY = targetY;
-                            compOffset = { x: 0, y: 0 };
-                        }
-                        segmentPoints = [
-                            { x: toolStartX, y: toolStartY, z: currentZ },
-                            { x: toolEndX, y: toolEndY, z: targetZ }
-                        ];
-                        lastDirection = null;
-                        lastCompOffset = null;
-                        firstCompSeg = null;
-                        firstCompDir = null;
-                        firstCompOff = null;
-                        firstCompCorner = null;
-                    } else {
-                        // G41 (Kiri/Climb) atau G42 (Kanan/Conventional) aktif
-                        if (xyDist > 1e-6) {
-                            const curDirection = { x: (targetX - currentX) / xyDist, y: (targetY - currentY) / xyDist };
-                            const lineOffset = this.calculateLineOffset(
-                                { x: currentX, y: currentY },
-                                { x: targetX, y: targetY },
-                                effectiveToolRadius,
-                                cutterComp
-                            );
-
-                            if (compJustActivated || prevCutterComp === 'G40' || !lastDirection || !lastCompOffset) {
-                                // Lead-in move: pahat mulai dari posisi uncompensated lalu bergeser ke lintasan offset terkompensasi
-                                toolStartX = currentX;
-                                toolStartY = currentY;
-                                toolEndX = targetX + lineOffset.x;
-                                toolEndY = targetY + lineOffset.y;
-                                compJustActivated = false;
-                                firstCompSeg = null;
-                                firstCompDir = null;
-                                firstCompOff = null;
-                                firstCompCorner = null;
-                            } else {
-                                // Titik temu perpotongan sudut (corner intersection) antara garis sebelumnya dan garis saat ini
-                                const P_int = this.calculateCornerIntersection(
-                                    { x: currentX, y: currentY },
-                                    lastDirection,
-                                    lastCompOffset,
-                                    curDirection,
-                                    lineOffset,
-                                    effectiveToolRadius
-                                );
-
-                                // Trim ujung segmen sebelumnya tepat di titik potong P_int (menghapus segitiga sudut)
-                                if (segments.length > 0) {
-                                    const prevSeg = segments[segments.length - 1];
-                                    if (prevSeg.cutterComp === cutterComp && !prevSeg.isHole) {
-                                        prevSeg.end.x = P_int.x;
-                                        prevSeg.end.y = P_int.y;
-                                        if (prevSeg.points && prevSeg.points.length > 0) {
-                                            const lastPt = prevSeg.points[prevSeg.points.length - 1];
-                                            lastPt.x = P_int.x;
-                                            lastPt.y = P_int.y;
-                                        }
-                                    }
-                                }
-
-                                // Segmen saat ini dimulai tepat dari titik potong P_int menuju target offset sejajar
-                                toolStartX = P_int.x;
-                                toolStartY = P_int.y;
-                                toolEndX = targetX + lineOffset.x;
-                                toolEndY = targetY + lineOffset.y;
-
-                                // Deteksi kontur tertutup (loop penutup kembali ke titik awal kontur)
-                                if (!firstCompCorner) {
-                                    firstCompCorner = { x: currentX, y: currentY };
-                                    firstCompDir = curDirection;
-                                    firstCompOff = lineOffset;
-                                } else if (Math.hypot(targetX - firstCompCorner.x, targetY - firstCompCorner.y) < 1e-3) {
-                                    // Ujung segmen penutup berpotongan dengan segmen pertama kontur
-                                    const P_close = this.calculateCornerIntersection(
-                                        { x: targetX, y: targetY },
-                                        curDirection,
-                                        lineOffset,
-                                        firstCompDir,
-                                        firstCompOff,
-                                        effectiveToolRadius
-                                    );
-                                    toolEndX = P_close.x;
-                                    toolEndY = P_close.y;
-
-                                    if (firstCompSeg) {
-                                        firstCompSeg.start.x = P_close.x;
-                                        firstCompSeg.start.y = P_close.y;
-                                        if (firstCompSeg.points && firstCompSeg.points.length > 0) {
-                                            firstCompSeg.points[0].x = P_close.x;
-                                            firstCompSeg.points[0].y = P_close.y;
-                                        }
-                                    }
-                                    if (leadInSeg) {
-                                        leadInSeg.end.x = P_close.x;
-                                        leadInSeg.end.y = P_close.y;
-                                        if (leadInSeg.points && leadInSeg.points.length > 0) {
-                                            const pLast = leadInSeg.points[leadInSeg.points.length - 1];
-                                            pLast.x = P_close.x;
-                                            pLast.y = P_close.y;
-                                        }
-                                    }
-                                }
-                            }
-
-                            segmentPoints = [
-                                { x: toolStartX, y: toolStartY, z: currentZ },
-                                { x: toolEndX, y: toolEndY, z: targetZ }
-                            ];
-
-                            compOffset = { x: lineOffset.x, y: lineOffset.y };
-                            lastDirection = curDirection;
-                            lastCompOffset = { x: lineOffset.x, y: lineOffset.y };
-                        } else {
-                            // Gerakan vertikal murni sumbu Z (turun potong / angkat) mempertahankan posisi offset XY
-                            toolStartX = currentX + compOffset.x;
-                            toolStartY = currentY + compOffset.y;
-                            toolEndX = targetX + compOffset.x;
-                            toolEndY = targetY + compOffset.y;
-                            segmentPoints = [
-                                { x: toolStartX, y: toolStartY, z: currentZ },
-                                { x: toolEndX, y: toolEndY, z: targetZ }
-                            ];
-                        }
-                    }
-
-                    const dist = Math.hypot(toolEndX - toolStartX, toolEndY - toolStartY, targetZ - currentZ);
+                    const dist = Math.hypot(targetX - currentX, targetY - currentY, targetZ - currentZ);
                     if (motionMode === 'G00') {
                         totalRapidDist += dist;
                     } else {
@@ -527,10 +294,8 @@ class MillingGCodeParser {
                         type: motionMode,
                         cutting: (motionMode !== 'G00'),
                         isHole: false,
-                        start: { x: toolStartX, y: toolStartY, z: currentZ },
-                        end: { x: toolEndX, y: toolEndY, z: targetZ },
-                        progStart: { x: currentX, y: currentY, z: currentZ },
-                        progEnd: { x: targetX, y: targetY, z: targetZ },
+                        start: { x: currentX, y: currentY, z: currentZ },
+                        end: { x: targetX, y: targetY, z: targetZ },
                         center: null,
                         radius: null,
                         feed: currentFeed,
@@ -538,23 +303,18 @@ class MillingGCodeParser {
                         spindleState: spindleState,
                         coolantState: coolantState,
                         cutterComp: cutterComp,
-                        compD: currentD,
                         distance: dist,
-                        points: segmentPoints
+                        points: [
+                            { x: currentX, y: currentY, z: currentZ },
+                            { x: targetX, y: targetY, z: targetZ }
+                        ]
                     });
 
-                    const pushedSeg = segments[segments.length - 1];
-                    if (!leadInSeg && (cutterComp === 'G41' || cutterComp === 'G42')) {
-                        leadInSeg = pushedSeg;
-                    } else if (!firstCompSeg && firstCompCorner && (cutterComp === 'G41' || cutterComp === 'G42') && pushedSeg !== leadInSeg) {
-                        firstCompSeg = pushedSeg;
-                    }
-
                     if (motionMode !== 'G00') {
-                        minCutX = Math.min(minCutX, toolStartX, toolEndX);
-                        maxCutX = Math.max(maxCutX, toolStartX, toolEndX);
-                        minCutY = Math.min(minCutY, toolStartY, toolEndY);
-                        maxCutY = Math.max(maxCutY, toolStartY, toolEndY);
+                        minCutX = Math.min(minCutX, currentX, targetX);
+                        maxCutX = Math.max(maxCutX, currentX, targetX);
+                        minCutY = Math.min(minCutY, currentY, targetY);
+                        maxCutY = Math.max(maxCutY, currentY, targetY);
                         minCutZ = Math.min(minCutZ, currentZ, targetZ);
                         maxCutZ = Math.max(maxCutZ, currentZ, targetZ);
                     }
@@ -563,10 +323,6 @@ class MillingGCodeParser {
                     currentY = targetY;
                     currentZ = targetZ;
                 } else if (motionMode === 'G02' || motionMode === 'G03') {
-                    const effectiveToolRadius = (detectedToolDiameter && detectedToolDiameter > 0)
-                        ? (detectedToolDiameter / 2)
-                        : ((this.options.defaultToolD || 10) / 2);
-
                     const arcResult = this.calculateArc({
                         lineNum: lineNum,
                         type: motionMode,
@@ -577,10 +333,7 @@ class MillingGCodeParser {
                         endY: targetY,
                         endZ: targetZ,
                         tokens: tokens,
-                        errors: errors,
-                        cutterComp: cutterComp,
-                        toolRadius: effectiveToolRadius,
-                        startCompOffset: compOffset
+                        errors: errors
                     });
 
                     if (arcResult) {
@@ -588,21 +341,8 @@ class MillingGCodeParser {
                         arcResult.spindleState = spindleState;
                         arcResult.coolantState = coolantState;
                         arcResult.cutterComp = cutterComp;
-                        arcResult.compD = currentD;
                         segments.push(arcResult);
                         totalCuttingDist += arcResult.arcLength;
-
-                        if (cutterComp !== 'G40' && arcResult.points && arcResult.points.length > 0) {
-                            const lastPt = arcResult.points[arcResult.points.length - 1];
-                            compOffset = {
-                                x: lastPt.x - targetX,
-                                y: lastPt.y - targetY
-                            };
-                        } else {
-                            compOffset = { x: 0, y: 0 };
-                        }
-                        compJustActivated = false;
-                        compJustCancelled = false;
 
                         // Bounds
                         arcResult.points.forEach(pt => {
@@ -619,24 +359,15 @@ class MillingGCodeParser {
                         segments.push({
                             lineNum: lineNum,
                             type: motionMode,
-                            cutting: true,
-                            isHole: false,
                             start: { x: currentX, y: currentY, z: currentZ },
                             end: { x: targetX, y: targetY, z: targetZ },
-                            progStart: { x: currentX, y: currentY, z: currentZ },
-                            progEnd: { x: targetX, y: targetY, z: targetZ },
                             feed: currentFeed,
                             spindle: currentSpindle,
                             spindleState: spindleState,
                             coolantState: coolantState,
                             cutterComp: cutterComp,
-                            compD: currentD,
                             isInvalidArc: true,
-                            distance: dist,
-                            points: [
-                                { x: currentX, y: currentY, z: currentZ },
-                                { x: targetX, y: targetY, z: targetZ }
-                            ]
+                            distance: dist
                         });
                         totalCuttingDist += dist;
                     }
@@ -825,43 +556,7 @@ class MillingGCodeParser {
             }
         }
 
-        const cutterComp = params.cutterComp || 'G40';
-        const toolRadius = params.toolRadius || 0;
-
-        let effectiveRadius = radius;
-        if (cutterComp === 'G41') {
-            // G41 = Left of path (Climb Milling)
-            if (isCW) {
-                effectiveRadius = radius + toolRadius;
-            } else {
-                if (radius <= toolRadius) {
-                    errors.push({
-                        lineNum: lineNum,
-                        type: 'WARNING',
-                        category: 'KOMPENSASI RADIUS (G41/G42)',
-                        message: 'Baris ' + lineNum + ': Radius busur R=' + radius.toFixed(2) + 'mm lebih kecil/sama dengan radius pisau (' + toolRadius.toFixed(2) + 'mm). Berisiko gouging / undercut pada kontur cekung dalam.'
-                    });
-                }
-                effectiveRadius = Math.max(0.1, radius - toolRadius);
-            }
-        } else if (cutterComp === 'G42') {
-            // G42 = Right of path (Conventional Milling)
-            if (isCW) {
-                if (radius <= toolRadius) {
-                    errors.push({
-                        lineNum: lineNum,
-                        type: 'WARNING',
-                        category: 'KOMPENSASI RADIUS (G41/G42)',
-                        message: 'Baris ' + lineNum + ': Radius busur R=' + radius.toFixed(2) + 'mm lebih kecil/sama dengan radius pisau (' + toolRadius.toFixed(2) + 'mm). Berisiko gouging / undercut pada kontur cekung dalam.'
-                    });
-                }
-                effectiveRadius = Math.max(0.1, radius - toolRadius);
-            } else {
-                effectiveRadius = radius + toolRadius;
-            }
-        }
-
-        const arcLength = effectiveRadius * deltaAngle;
+        const arcLength = radius * deltaAngle;
         const numPoints = Math.max(16, Math.ceil(deltaAngle / (Math.PI / 24)));
         const arcPoints = [];
 
@@ -871,8 +566,8 @@ class MillingGCodeParser {
                 ? startAngle - fraction * deltaAngle 
                 : startAngle + fraction * deltaAngle;
             
-            const pX = centerX + effectiveRadius * Math.cos(currentAngle);
-            const pY = centerY + effectiveRadius * Math.sin(currentAngle);
+            const pX = centerX + radius * Math.cos(currentAngle);
+            const pY = centerY + radius * Math.sin(currentAngle);
             const pZ = startZ + fraction * (endZ - startZ); // Supports helical ramp
             
             arcPoints.push({ x: pX, y: pY, z: pZ });
@@ -884,13 +579,10 @@ class MillingGCodeParser {
             cutting: true,
             isHole: false,
             isCW: isCW,
-            start: arcPoints[0],
-            end: arcPoints[arcPoints.length - 1],
-            progStart: { x: startX, y: startY, z: startZ },
-            progEnd: { x: endX, y: endY, z: endZ },
+            start: { x: startX, y: startY, z: startZ },
+            end: { x: endX, y: endY, z: endZ },
             center: { x: centerX, y: centerY, z: startZ },
-            radius: effectiveRadius,
-            nominalRadius: radius,
+            radius: radius,
             feed: params.feed || 0,
             startAngle: startAngle,
             endAngle: endAngle,
